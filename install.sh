@@ -54,7 +54,6 @@ PACKAGES=(
   php8.4-fpm
   php8.4-mysql
   mariadb-server
-  php8.4
   php8.4-dev
   php8.4-apcu
   php8.4-uploadprogress
@@ -86,11 +85,9 @@ PACKAGES=(
   acl
 )
 
-# Install individual packages using Nala
+# Install all packages at once using Nala
 echo -e "\n${GREEN}Installing packages...${NC}"
-for PACKAGE in "${PACKAGES[@]}"; do
-  sudo nala install -y "$PACKAGE"
-done
+sudo nala install -y "${PACKAGES[@]}"
 
 # Set PHP as default
 echo -e "\n${GREEN}Setting PHP 8.4 as default...${NC}"
@@ -205,19 +202,19 @@ fi
 chsh -s "$(which zsh)"
 
 # Clone plugin repositories
-mkdir -p "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins"
+mkdir -p "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins"
 # Only clone if not exists to avoid errors on re-run
-if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ]; then
-    git clone https://github.com/zsh-users/zsh-autosuggestions "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions"
+if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ]; then
+    git clone https://github.com/zsh-users/zsh-autosuggestions "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions"
 fi
-if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting" ]; then
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting"
+if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting" ]; then
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting"
 fi
 if [ ! -d "$HOME/.fzf" ]; then
     git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && ~/.fzf/install --all
 fi
-if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-z" ]; then
-    git clone https://github.com/agkozak/zsh-z "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-z"
+if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-z" ]; then
+    git clone https://github.com/agkozak/zsh-z "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-z"
 fi
 
 # Configure Zsh
