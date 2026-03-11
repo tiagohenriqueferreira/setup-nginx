@@ -56,14 +56,15 @@ PACKAGES=(
   acl
 )
 
-# Install all packages at once using Nala
+# Install all packages at once using Nala (--no-install-recommends prevents Apache2 from sneaking in)
 echo -e "\n${GREEN}Installing packages...${NC}"
-sudo nala install -y "${PACKAGES[@]}"
+sudo nala install -y --no-install-recommends "${PACKAGES[@]}"
 
-# Prevent Apache2 from running and remove it
-echo -e "\n${GREEN}Removing Apache2 to prevent conflicts with Nginx...${NC}"
+# Ensure Apache2 is completely removed if it was previously installed
+echo -e "\n${GREEN}Ensuring Apache2 is not present...${NC}"
 sudo systemctl stop apache2 2>/dev/null || true
-sudo apt-get purge -y apache2 apache2-utils apache2-bin apache2.2-bin libapache2-mod-php8.4 2>/dev/null || true
+sudo systemctl disable apache2 2>/dev/null || true
+sudo apt-get purge -y 'apache2*' 'libapache2*' 2>/dev/null || true
 sudo apt-get autoremove -y 2>/dev/null || true
 
 # Set PHP as default
@@ -71,7 +72,6 @@ echo -e "\n${GREEN}Setting PHP 8.4 as default...${NC}"
 sudo update-alternatives --set php /usr/bin/php8.4
 sudo update-alternatives --set phar /usr/bin/phar8.4
 sudo update-alternatives --set phar.phar /usr/bin/phar.phar8.4
-sudo update-alternatives --set php-config /usr/bin/php-config8.4
 
 # Proper Composer installation
 echo -e "\n${GREEN}Installing Composer...${NC}"
@@ -91,6 +91,14 @@ cmake --build /tmp/fastfetch/build --parallel >/dev/null
 sudo cp /tmp/fastfetch/build/fastfetch /usr/local/bin/fastfetch
 
 # Removido comando A2ENMOD pois o Nginx usará PHP-FPM nativo
+
+# Set permissions for the current user on /var/www and Nginx vhosts
+echo -e "\n${GREEN}Setting directory permissions for current user...${NC}"
+CURRENT_USER=$(whoami)
+sudo chown -R "$CURRENT_USER":www-data /var/www
+sudo chmod -R 2775 /var/www
+sudo chown -R "$CURRENT_USER":www-data /etc/nginx/sites-available
+sudo chown -R "$CURRENT_USER":www-data /etc/nginx/sites-enabled
 
 # Adjust PHP settings
 echo -e "\n${GREEN}Adjusting PHP settings...${NC}"
@@ -275,7 +283,7 @@ echo -e "\n${GREEN}Configuring Zsh...${NC}"
   echo "  fi"
   echo ""
   echo "  echo \"Creating Nginx vhost for \$domain...\""
-  echo "  sudo tee \"\$vhost_file\" > /dev/null << 'EOF'"
+  echo "  cat > \"\$vhost_file\" <<VHOSTEOF"
   echo "server {"
   echo "    listen 80;"
   echo "    listen [::]:80;"
@@ -285,46 +293,46 @@ echo -e "\n${GREEN}Configuring Zsh...${NC}"
   echo "    index index.php index.html;"
   echo ""
   echo "    location / {"
-  echo "        try_files \$uri /index.php?\$query_string;"
+  echo '        try_files \$uri /index.php?\$query_string;'
   echo "    }"
   echo ""
   echo "    location @rewrite {"
-  echo "        rewrite ^/(.*)\$ /index.php?q=\$1;"
+  echo '        rewrite ^/(.*)$ /index.php?q=\$1;'
   echo "    }"
   echo ""
-  echo "    location ~ '\\.php\$|^/update.php' {"
-  echo "        fastcgi_split_path_info ^(.+?\\.php)(|/.*)\$;"
+  echo "    location ~ '\.php\$|^/update.php' {"
+  echo '        fastcgi_split_path_info ^(.+?\.php)(|/.*)$;'
   echo "        include fastcgi_params;"
   echo "        include snippets/fastcgi-php.conf;"
-  echo "        fastcgi_param HTTP_PROXY \\\"\\\";"
-  echo "        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;"
-  echo "        fastcgi_param PATH_INFO \$fastcgi_path_info;"
-  echo "        fastcgi_param QUERY_STRING \$query_string;"
+  echo '        fastcgi_param HTTP_PROXY \"\";'
+  echo '        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;'
+  echo '        fastcgi_param PATH_INFO \$fastcgi_path_info;'
+  echo '        fastcgi_param QUERY_STRING \$query_string;'
   echo "        fastcgi_intercept_errors on;"
   echo "        fastcgi_pass unix:/run/php/php8.4-fpm.sock;"
   echo "    }"
   echo ""
-  echo "    location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg)$ {"
-  echo "        try_files \\\$uri @rewrite;"
+  echo "    location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg)\$ {"
+  echo '        try_files \$uri @rewrite;'
   echo "        expires max;"
   echo "        log_not_found off;"
   echo "    }"
   echo ""
   echo "    location ~ ^/sites/.*/files/styles/ {"
-  echo "        try_files \\\$uri @rewrite;"
+  echo '        try_files \$uri @rewrite;'
   echo "    }"
   echo ""
   echo "    location ~ ^(/[a-z\\-]+)?/system/files/ {"
-  echo "        try_files \\\$uri /index.php?\\\$query_string;"
+  echo '        try_files \$uri /index.php?\$query_string;'
   echo "    }"
   echo ""
-  echo "    location ~* \\.(engine|inc|info|install|make|module|profile|test|po|sh|.*sql|theme|twig|tpl(\\.php)?|xtmpl)([a-z\\-]+)?$ {"
+  echo "    location ~* \\.(engine|inc|info|install|make|module|profile|test|po|sh|.*sql|theme|twig|tpl(\\.php)?|xtmpl)([a-z\\-]+)?\$ {"
   echo "        deny all;"
   echo "    }"
   echo "}"
-  echo "EOF"
+  echo "VHOSTEOF"
   echo ""
-  echo "  sudo ln -s \"\$vhost_file\" \"/etc/nginx/sites-enabled/\""
+  echo "  ln -s \"\$vhost_file\" \"/etc/nginx/sites-enabled/\" 2>/dev/null || true"
   echo "  sudo systemctl restart nginx"
   echo "  echo \"Vhost created and enabled: http://\$domain\""
   echo "  echo \"Make sure to add '\$domain' to your Windows hosts file.\""
