@@ -4,7 +4,7 @@
 set -e
 
 # Drupal on WSL script
-echo -e "\n🚀 Drupal Development Environment for Ubuntu (PHP 8.4)\n"
+echo -e "\n🚀 Drupal Development Environment for Ubuntu (PHP / Nginx / MariaDB)\n"
 
 # Color definitions
 GREEN='\033[0;32m'
