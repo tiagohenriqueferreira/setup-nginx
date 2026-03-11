@@ -62,6 +62,7 @@ After installation, you have some new tools in your `.zshrc`:
 
 Estas funções facilitam muito o dia a dia, gerando de maneira automatizada vhosts do Nginx ou bancos de dados locais.
 
+- `init-drupal` - Executado na raiz do seu projeto, esse comando cria os diretórios `files` e `private_files` no local padrão, aponta as váriaveis `$settings['config_sync_directory']` e `$settings['file_private_path']` no seu `settings.php` e acerta as permissões do diretório para o Nginx.
 - `create-vhost <dominio> <diretorio>` - Cria um Vhost Nginx perfeito pro Drupal e reinicia o Nginx.
 - `create-db <nome>` - Cria um banco de dados e usuário no MariaDB com acesso total.
 - `delete-db <nome>` - Exclui um banco de dados e seu usuário.
