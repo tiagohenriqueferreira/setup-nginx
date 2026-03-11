@@ -67,19 +67,23 @@ Estas funções facilitam muito o dia a dia, gerando de maneira automatizada vho
 
 ### 🛠️ Bash Aliases
 
-- `drush` - Shortcut for Drush (`./vendor/drush/drush/drush`)
+**General/Server:**
 - `sites` - Navigate to `/var/www/`
 - `vhosts` - Navigate to `/etc/nginx/sites-available/`
 - `update` - Update packages and upgrade automatically using Nala
-- `upgrade` - Install packages listed as upgradable using Nala
 - `rnx` - Restart Nginx service (`sudo service nginx restart`)
 - `rmdb` - Restart MariaDB service (`sudo service mariadb restart`)
-- `ss1` - Compiles `scss/style.scss` to `css/style.css` using `npx sass` in watch mode
-- `ss2` - Compiles `scss/ck5style.scss` to `css/ck5style.css` using `npx sass` in watch mode
 - `logs` - Tails the Nginx error log in real time (`/var/log/nginx/error.log`)
 - `phplog` - Tails the PHP-FPM error log in real time (`/var/log/php8.4-fpm.log`)
-
 - `fp` - Fix permissions on Drupal files directory
+
+**Drupal & Frontend:**
+- `drush` - Global wrapper for local Drush bins (`./vendor/drush/drush/drush`)
+- `ds` - Shortcut to clear Drupal caches (`drush cr`)
+- `du` - Shortcut to generate a one-time login link for user 1 (`drush uli`)
+- `cwd` - Shortcut to require standard drupal extensions via composer (`composer require drupal/`)
+- `ss1` - Compiles `scss/style.scss` to `css/style.css` using `npx sass` in watch mode
+- `ss2` - Compiles `scss/ck5style.scss` to `css/ck5style.css` using `npx sass` in watch mode
 
 ## 🔍 Troubleshooting
 
