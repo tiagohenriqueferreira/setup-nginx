@@ -66,6 +66,12 @@ PACKAGES=(
 echo -e "\n${GREEN}Installing packages...${NC}"
 sudo nala install -y "${PACKAGES[@]}"
 
+# Prevent Apache2 from running and remove it
+echo -e "\n${GREEN}Removing Apache2 to prevent conflicts with Nginx...${NC}"
+sudo systemctl stop apache2 2>/dev/null || true
+sudo apt-get purge -y apache2 apache2-utils apache2-bin apache2.2-bin libapache2-mod-php8.4 2>/dev/null || true
+sudo apt-get autoremove -y 2>/dev/null || true
+
 # Set PHP as default
 echo -e "\n${GREEN}Setting PHP 8.4 as default...${NC}"
 sudo update-alternatives --set php /usr/bin/php8.4
@@ -204,9 +210,9 @@ echo -e "\n${GREEN}Configuring Zsh...${NC}"
   echo "  git"
   echo "  ssh-agent"
   echo "  zsh-autosuggestions"
-  echo "  zsh-syntax-highlighting"
   echo "  fzf"
   echo "  z"
+  echo "  zsh-syntax-highlighting"
   echo ")"
   echo ""
   echo "# NVM Setup"
@@ -276,7 +282,7 @@ echo -e "\n${GREEN}Configuring Zsh...${NC}"
   echo "  fi"
   echo ""
   echo "  echo \"Creating Nginx vhost for \$domain...\""
-  echo "  sudo bash -c \"cat > \$vhost_file <<EOF"
+  echo "  sudo tee \"\$vhost_file\" > /dev/null <<EOF"
   echo "server {"
   echo "    listen 80;"
   echo "    listen [::]:80;"
@@ -323,7 +329,7 @@ echo -e "\n${GREEN}Configuring Zsh...${NC}"
   echo "        deny all;"
   echo "    }"
   echo "}"
-  echo "EOF\""
+  echo "EOF"
   echo ""
   echo "  sudo ln -s \"\$vhost_file\" \"/etc/nginx/sites-enabled/\""
   echo "  sudo systemctl restart nginx"
