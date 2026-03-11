@@ -80,7 +80,7 @@ Estas funções facilitam muito o dia a dia, gerando de maneira automatizada vho
 - `ss2` - Compiles `scss/ck5style.scss` to `css/ck5style.css` using SASS in watch mode
 - `logs` - Tails the Nginx error log in real time (`/var/log/nginx/error.log`)
 - `phplog` - Tails the PHP-FPM error log in real time (`/var/log/php8.4-fpm.log`)
-- `versions` - Displays installed software versions
+
 - `fp` - Fix permissions on Drupal files directory
 
 ## 🔍 Troubleshooting
