@@ -34,24 +34,18 @@ PACKAGES=(
   php8.4-fpm
   php8.4-mysql
   mariadb-server
-  php8.4-dev
   php8.4-apcu
   php8.4-uploadprogress
   ffmpeg
-  php8.4-common
   php8.4-ldap
-  php8.4-dom
   php8.4-cli
   php8.4-gd
-  php8.4-simplexml
   php8.4-zip
   php8.4-xml
   php8.4-mbstring
   php8.4-curl
   php8.4-bcmath
-  php8.4-xmlrpc
   php8.4-opcache
-  php8.4-soap
   php8.4-intl
   php8.4-imagick
   libavif-bin
