@@ -79,9 +79,6 @@ php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
 php -r "if (hash_file('sha384', 'composer-setup.php') === file_get_contents('https://composer.github.io/installer.sig')) { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); exit(1); }"
 sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 php -r "unlink('composer-setup.php');"
-
-
-
 # Install FastFetch
 echo -e "\n${GREEN}Installing FastFetch...${NC}"
 if [ -d "/tmp/fastfetch" ]; then rm -rf /tmp/fastfetch; fi
@@ -90,7 +87,7 @@ cmake -S /tmp/fastfetch -B /tmp/fastfetch/build -DCMAKE_BUILD_TYPE=Release >/dev
 cmake --build /tmp/fastfetch/build --parallel >/dev/null
 sudo cp /tmp/fastfetch/build/fastfetch /usr/local/bin/fastfetch
 
-# Removido comando A2ENMOD pois o Nginx usará PHP-FPM nativo
+
 
 # Set permissions for the current user on /var/www and Nginx vhosts
 echo -e "\n${GREEN}Setting directory permissions for current user...${NC}"
@@ -137,7 +134,7 @@ SERVICES=(nginx php8.4-fpm mariadb)
 FAILED=0
 
 for SERVICE in "${SERVICES[@]}"; do
-  check_service "$SERVICE" || ((FAILED++))
+  check_service "$SERVICE" || FAILED=$((FAILED + 1))
 done
 
 # Check PHP installation
@@ -153,7 +150,7 @@ if command -v php &> /dev/null; then
   fi
 else
   echo -e "${RED}✗ PHP installation failed${NC}"
-  ((FAILED++))
+  FAILED=$((FAILED + 1))
 fi
 
 # Check Composer installation
@@ -162,12 +159,12 @@ if command -v composer &> /dev/null; then
   echo -e "${GREEN}✓ Composer $COMPOSER_VERSION is installed${NC}"
 else
   echo -e "${RED}✗ Composer installation failed${NC}"
-  ((FAILED++))
+  FAILED=$((FAILED + 1))
 fi
 
 # Install Zsh and Oh My Zsh
 echo -e "\n${GREEN}Installing Zsh and Oh My Zsh...${NC}"
-sudo nala install -y zsh curl git
+sudo nala install -y zsh
 
 # Backup existing .zshrc
 if [ -f ~/.zshrc ]; then
