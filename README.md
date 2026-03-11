@@ -46,10 +46,11 @@ Após a instalação, o seu `.zshrc` terá estas funções prontas para uso:
 
 | Comando | O que faz |
 |---|---|
+| `init-drupal` | Na raiz do projeto: copia `default.settings.php` para `settings.php` e dá as permissões para instalação |
+| `adjust-drupal` | Após instalar o Drupal: cria `files/`, `private_files/`, configura `config_sync_directory` e `file_private_path` no `settings.php` e corrige permissões |
 | `create-vhost <dominio> <diretorio>` | Cria um server block do Nginx otimizado para Drupal e reinicia o serviço |
 | `create-db <nome>` | Cria banco de dados + usuário no MariaDB (mesmo nome e senha) |
 | `delete-db <nome>` | Exclui banco de dados e usuário (pede confirmação) |
-| `init-drupal` | Na raiz do projeto: cria `files/`, `private_files/`, configura `config_sync_directory` e `file_private_path` no `settings.php` e corrige permissões |
 | `fix-perms [dir]` | Corrige permissões do diretório de arquivos do Drupal para `usuario:www-data` |
 | `drush` | Wrapper global que encontra e executa o Drush local do projeto automaticamente |
 
