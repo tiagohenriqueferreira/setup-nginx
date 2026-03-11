@@ -23,9 +23,7 @@ The script automatically installs and configures:
 - Composer
 - MariaDB
 - FFmpeg
-- Node.js
-- Npm
-- SASS
+- NVM (Node Version Manager) com NodeJS LTS e Npm
 
 ## 💡 Features
 
@@ -76,8 +74,8 @@ Estas funções facilitam muito o dia a dia, gerando de maneira automatizada vho
 - `upgrade` - Install packages listed as upgradable using Nala
 - `rnx` - Restart Nginx service (`sudo service nginx restart`)
 - `rmdb` - Restart MariaDB service (`sudo service mariadb restart`)
-- `ss1` - Compiles `scss/style.scss` to `css/style.css` using SASS in watch mode
-- `ss2` - Compiles `scss/ck5style.scss` to `css/ck5style.css` using SASS in watch mode
+- `ss1` - Compiles `scss/style.scss` to `css/style.css` using `npx sass` in watch mode
+- `ss2` - Compiles `scss/ck5style.scss` to `css/ck5style.css` using `npx sass` in watch mode
 - `logs` - Tails the Nginx error log in real time (`/var/log/nginx/error.log`)
 - `phplog` - Tails the PHP-FPM error log in real time (`/var/log/php8.4-fpm.log`)
 
@@ -134,6 +132,4 @@ This project is under the MIT License. See the `LICENSE` file for more informati
 ![Composer](https://img.shields.io/badge/Composer-Latest-yellow.svg)
 ![MariaDB](https://img.shields.io/badge/MariaDB-Latest-blue.svg)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Latest-blue.svg)
-![Node.js](https://img.shields.io/badge/Node.js-Latest-green.svg)
-![Npm](https://img.shields.io/badge/Npm-Latest-green.svg)
-![SASS](https://img.shields.io/badge/SASS-Latest-pink.svg)
+![NVM](https://img.shields.io/badge/NVM-Latest-green.svg)

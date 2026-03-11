@@ -37,7 +37,6 @@ PACKAGES=(
   php8.4-dev
   php8.4-apcu
   php8.4-uploadprogress
-  php-pear
   ffmpeg
   php8.4-common
   php8.4-ldap
@@ -57,8 +56,6 @@ PACKAGES=(
   php8.4-imagick
   libavif-bin
   libmagickcore-6.q16-6-extra
-  nodejs
-  npm
   build-essential
   cmake
   pkg-config
@@ -84,9 +81,7 @@ php -r "if (hash_file('sha384', 'composer-setup.php') === file_get_contents('htt
 sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 php -r "unlink('composer-setup.php');"
 
-# Install Sass globally via npm
-echo -e "\n${GREEN}Installing SASS...${NC}"
-sudo npm install -g sass
+
 
 # Install FastFetch
 echo -e "\n${GREEN}Installing FastFetch...${NC}"
@@ -214,6 +209,10 @@ echo -e "\n${GREEN}Configuring Zsh...${NC}"
   echo "  z"
   echo ")"
   echo ""
+  echo "# NVM Setup"
+  echo "export NVM_DIR=\"\\\$HOME/.nvm\""
+  echo "[ -s \"\\\$NVM_DIR/nvm.sh\" ] && \\. \"\\\$NVM_DIR/nvm.sh\"  # This loads nvm"
+  echo "[ -s \"\\\$NVM_DIR/bash_completion\" ] && \\. \"\\\$NVM_DIR/bash_completion\"  # This loads nvm bash_completion"
   echo ""
   echo "# Starship prompt"
   echo "eval \"\$(starship init zsh)\""
@@ -409,8 +408,8 @@ echo -e "\n${GREEN}Configuring Zsh...${NC}"
   echo "alias upgrade=\"sudo nala install \$(nala list --upgradable | awk '/^[^├└]/ && NF {print \$1}')\""
   echo "alias rnx=\"sudo service nginx restart\""
   echo "alias rmdb=\"sudo service mariadb restart\""
-  echo "alias ss1=\"sass scss/style.scss css/style.css -w\""
-  echo "alias ss2=\"sass scss/ck5style.scss css/ck5style.css -w\""
+  echo "alias ss1=\"npx sass scss/style.scss css/style.css -w\""
+  echo "alias ss2=\"npx sass scss/ck5style.scss css/ck5style.css -w\""
   echo "alias logs=\"tail -f /var/log/nginx/error.log\""
   echo "alias phplog=\"tail -f /var/log/php8.4-fpm.log\""
   echo "alias fp=\"fix-perms\""
@@ -419,6 +418,14 @@ echo -e "\n${GREEN}Configuring Zsh...${NC}"
 
 echo -e "\n${GREEN}Installing Starship...${NC}"
 curl -sS https://starship.rs/install.sh | sh -s -- -y
+
+echo -e "\n${GREEN}Installing NVM & Node.js LTS...${NC}"
+export NVM_DIR="$HOME/.nvm"
+curl -sL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+nvm install --lts
+nvm use --lts
+nvm alias default 'lts/*'
 
 echo -e "\n${GREEN}Configuring Starship with Catppuccin Powerline (Macchiato)...${NC}"
 mkdir -p ~/.config
