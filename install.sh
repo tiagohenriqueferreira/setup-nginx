@@ -1,34 +1,33 @@
 #!/bin/bash
 
-# Stop script on error
+# Interrompe o script em caso de erro
 set -e
 
-# Drupal on WSL script
-echo -e "\n🚀 Drupal Development Environment for Ubuntu (PHP / Nginx / MariaDB)\n"
+echo -e "\n🚀 Ambiente de Desenvolvimento Drupal para Ubuntu (PHP / Nginx / MariaDB)\n"
 
-# Color definitions
+# Definição de cores
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No color
+NC='\033[0m'
 
-# Update and upgrade packages
-echo -e "${GREEN}Updating packages...${NC}"
+# Atualização e upgrade de pacotes
+echo -e "${GREEN}Atualizando pacotes...${NC}"
 sudo apt update && sudo apt list --upgradable && sudo apt upgrade -y
 
-# Install Nala
-echo -e "\n${GREEN}Installing Nala...${NC}"
+# Instalar o Nala
+echo -e "\n${GREEN}Instalando Nala...${NC}"
 sudo apt install nala software-properties-common -y
 
-# Add PHP PPA
-echo -e "\n${GREEN}Adding PHP PPA...${NC}"
+# Adicionar PPA do PHP
+echo -e "\n${GREEN}Adicionando PPA do PHP...${NC}"
 sudo add-apt-repository ppa:ondrej/php -y
 
-# Update using Nala
-echo -e "\n${GREEN}Updating with Nala...${NC}"
+# Atualizar com Nala
+echo -e "\n${GREEN}Atualizando com Nala...${NC}"
 sudo nala update && sudo nala list --upgradable && sudo nala upgrade -y
 
-# List of packages to install
+# Lista de pacotes para instalar
 PACKAGES=(
   nginx
   php8.4-fpm
@@ -56,49 +55,48 @@ PACKAGES=(
   acl
 )
 
-# Install all packages at once using Nala (--no-install-recommends prevents Apache2 from sneaking in)
-echo -e "\n${GREEN}Installing packages...${NC}"
+# Instalar pacotes via Nala (--no-install-recommends impede o Apache2 de ser instalado)
+echo -e "\n${GREEN}Instalando pacotes...${NC}"
 sudo nala install -y --no-install-recommends "${PACKAGES[@]}"
 
-# Ensure Apache2 is completely removed if it was previously installed
-echo -e "\n${GREEN}Ensuring Apache2 is not present...${NC}"
+# Garantir que o Apache2 esteja completamente removido
+echo -e "\n${GREEN}Garantindo que o Apache2 não está presente...${NC}"
 sudo systemctl stop apache2 2>/dev/null || true
 sudo systemctl disable apache2 2>/dev/null || true
 sudo apt-get purge -y 'apache2*' 'libapache2*' 2>/dev/null || true
 sudo apt-get autoremove -y 2>/dev/null || true
 
-# Set PHP as default
-echo -e "\n${GREEN}Setting PHP 8.4 as default...${NC}"
+# Definir PHP 8.4 como padrão
+echo -e "\n${GREEN}Definindo PHP 8.4 como padrão...${NC}"
 sudo update-alternatives --set php /usr/bin/php8.4
 sudo update-alternatives --set phar /usr/bin/phar8.4
 sudo update-alternatives --set phar.phar /usr/bin/phar.phar8.4
 
-# Proper Composer installation
-echo -e "\n${GREEN}Installing Composer...${NC}"
+# Instalação do Composer
+echo -e "\n${GREEN}Instalando Composer...${NC}"
 php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
 php -r "if (hash_file('sha384', 'composer-setup.php') === file_get_contents('https://composer.github.io/installer.sig')) { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); exit(1); }"
 sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 php -r "unlink('composer-setup.php');"
-# Install FastFetch
-echo -e "\n${GREEN}Installing FastFetch...${NC}"
+
+# Instalação do FastFetch
+echo -e "\n${GREEN}Instalando FastFetch...${NC}"
 if [ -d "/tmp/fastfetch" ]; then rm -rf /tmp/fastfetch; fi
 git clone -q https://github.com/fastfetch-cli/fastfetch.git /tmp/fastfetch
 cmake -S /tmp/fastfetch -B /tmp/fastfetch/build -DCMAKE_BUILD_TYPE=Release >/dev/null
 cmake --build /tmp/fastfetch/build --parallel >/dev/null
 sudo cp /tmp/fastfetch/build/fastfetch /usr/local/bin/fastfetch
 
-
-
-# Set permissions for the current user on /var/www and Nginx vhosts
-echo -e "\n${GREEN}Setting directory permissions for current user...${NC}"
+# Permissões dos diretórios para o usuário atual
+echo -e "\n${GREEN}Configurando permissões dos diretórios...${NC}"
 CURRENT_USER=$(whoami)
 sudo chown -R "$CURRENT_USER":www-data /var/www
 sudo chmod -R 2775 /var/www
 sudo chown -R "$CURRENT_USER":www-data /etc/nginx/sites-available
 sudo chown -R "$CURRENT_USER":www-data /etc/nginx/sites-enabled
 
-# Adjust PHP settings
-echo -e "\n${GREEN}Adjusting PHP settings...${NC}"
+# Ajustar configurações do PHP
+echo -e "\n${GREEN}Ajustando configurações do PHP...${NC}"
 PHP_INI="/etc/php/8.4/fpm/php.ini"
 sudo sed -i 's/memory_limit = .*/memory_limit = 2048M/' "$PHP_INI"
 sudo sed -i 's/upload_max_filesize = .*/upload_max_filesize = 512M/' "$PHP_INI"
@@ -106,26 +104,26 @@ sudo sed -i 's/post_max_size = .*/post_max_size = 2048M/' "$PHP_INI"
 sudo sed -i 's/max_execution_time = .*/max_execution_time = 180/' "$PHP_INI"
 sudo sed -i 's/max_input_time = .*/max_input_time = 180/' "$PHP_INI"
 
-# Configure APCu
-echo -e "\n${GREEN}Configuring APCu...${NC}"
+# Configurar APCu
+echo -e "\n${GREEN}Configurando APCu...${NC}"
 DETECTED_PHP_VERSION=$(php -r "echo PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION;")
 APCU_INI="/etc/php/${DETECTED_PHP_VERSION}/mods-available/apcu.ini"
 echo "extension=apcu.so" | sudo tee "$APCU_INI" > /dev/null
 echo "apc.shm_size=128M" | sudo tee -a "$APCU_INI" > /dev/null
 sudo phpenmod -v "${DETECTED_PHP_VERSION}" apcu
 
-# Restart Nginx and PHP-FPM
+# Reiniciar Nginx e PHP-FPM
 sudo systemctl restart nginx php8.4-fpm
 
-# Check if services are running and display status
-echo -e "\n${GREEN}Checking installation status...${NC}"
+# Verificar se os serviços estão rodando
+echo -e "\n${GREEN}Verificando status da instalação...${NC}"
 
 check_service() {
   if systemctl is-active --quiet "$1"; then
-    echo -e "${GREEN}✓ $1 is running${NC}"
+    echo -e "${GREEN}✓ $1 está rodando${NC}"
     return 0
   else
-    echo -e "${RED}✗ $1 failed to start${NC}"
+    echo -e "${RED}✗ $1 falhou ao iniciar${NC}"
     return 1
   fi
 }
@@ -137,52 +135,51 @@ for SERVICE in "${SERVICES[@]}"; do
   check_service "$SERVICE" || FAILED=$((FAILED + 1))
 done
 
-# Check PHP installation
+# Verificar instalação do PHP
 if command -v php &> /dev/null; then
   INSTALLED_PHP_VERSION=$(php -v | head -n1 | cut -d' ' -f2)
-  echo -e "${GREEN}✓ PHP $INSTALLED_PHP_VERSION is installed${NC}"
+  echo -e "${GREEN}✓ PHP $INSTALLED_PHP_VERSION instalado${NC}"
 
-  # Check AVIF Support
+  # Verificar suporte AVIF
   if php -i | grep -q "AVIF Support => enabled"; then
-      echo -e "${GREEN}✓ PHP GD AVIF Support enabled${NC}"
+      echo -e "${GREEN}✓ Suporte AVIF do PHP GD habilitado${NC}"
   else
-      echo -e "${YELLOW}⚠ PHP GD AVIF Support NOT found (check libavif)${NC}"
+      echo -e "${YELLOW}⚠ Suporte AVIF do PHP GD não encontrado (verifique libavif)${NC}"
   fi
 else
-  echo -e "${RED}✗ PHP installation failed${NC}"
+  echo -e "${RED}✗ Instalação do PHP falhou${NC}"
   FAILED=$((FAILED + 1))
 fi
 
-# Check Composer installation
+# Verificar instalação do Composer
 if command -v composer &> /dev/null; then
   COMPOSER_VERSION=$(composer --version | cut -d' ' -f2)
-  echo -e "${GREEN}✓ Composer $COMPOSER_VERSION is installed${NC}"
+  echo -e "${GREEN}✓ Composer $COMPOSER_VERSION instalado${NC}"
 else
-  echo -e "${RED}✗ Composer installation failed${NC}"
+  echo -e "${RED}✗ Instalação do Composer falhou${NC}"
   FAILED=$((FAILED + 1))
 fi
 
-# Install Zsh and Oh My Zsh
-echo -e "\n${GREEN}Installing Zsh and Oh My Zsh...${NC}"
+# Instalar Zsh e Oh My Zsh
+echo -e "\n${GREEN}Instalando Zsh e Oh My Zsh...${NC}"
 sudo nala install -y zsh
 
-# Backup existing .zshrc
+# Backup do .zshrc existente
 if [ -f ~/.zshrc ]; then
-    echo -e "${YELLOW}Backing up existing .zshrc to .zshrc.backup...${NC}"
+    echo -e "${YELLOW}Fazendo backup do .zshrc existente para .zshrc.backup...${NC}"
     cp ~/.zshrc ~/.zshrc.backup
 fi
 
-# Install Oh My Zsh (unattended)
+# Instalar Oh My Zsh (sem interação)
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
   sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 fi
 
-# Make Zsh the default shell
+# Definir Zsh como shell padrão
 chsh -s "$(which zsh)"
 
-# Clone plugin repositories
+# Clonar repositórios de plugins
 mkdir -p "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins"
-# Only clone if not exists to avoid errors on re-run
 if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ]; then
     git clone https://github.com/zsh-users/zsh-autosuggestions "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions"
 fi
@@ -196,10 +193,10 @@ if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-z" ]; then
     git clone https://github.com/agkozak/zsh-z "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-z"
 fi
 
-# Configure Zsh
-echo -e "\n${GREEN}Configuring Zsh...${NC}"
+# Configurar Zsh
+echo -e "\n${GREEN}Configurando Zsh...${NC}"
 {
-  echo "# Oh My Zsh configuration"
+  echo "# Configuração do Oh My Zsh"
   echo "export ZSH=\"\$HOME/.oh-my-zsh\""
   echo "ZSH_THEME=\"af-magic\""
   echo ""
@@ -215,15 +212,15 @@ echo -e "\n${GREEN}Configuring Zsh...${NC}"
   echo ""
   echo "source \$ZSH/oh-my-zsh.sh"
   echo ""
-  echo "# NVM Setup"
+  echo "# Configuração do NVM"
   echo "export NVM_DIR=\"\\\$HOME/.nvm\""
-  echo "[ -s \"\\\$NVM_DIR/nvm.sh\" ] && \\. \"\\\$NVM_DIR/nvm.sh\"  # This loads nvm"
-  echo "[ -s \"\\\$NVM_DIR/bash_completion\" ] && \\. \"\\\$NVM_DIR/bash_completion\"  # This loads nvm bash_completion"
+  echo "[ -s \"\\\$NVM_DIR/nvm.sh\" ] && \\. \"\\\$NVM_DIR/nvm.sh\""
+  echo "[ -s \"\\\$NVM_DIR/bash_completion\" ] && \\. \"\\\$NVM_DIR/bash_completion\""
   echo ""
-  echo "# Starship prompt"
+  echo "# Prompt Starship"
   echo "eval \"\$(starship init zsh)\""
   echo ""
-  echo "# Function that executes Drush regardless of the directory."
+  echo "# Função que executa o Drush independente do diretório atual"
   echo "drush() {"
   echo "  local current_dir=\$(pwd)"
   echo "  local project_root=\"\""
@@ -239,12 +236,12 @@ echo -e "\n${GREEN}Configuring Zsh...${NC}"
   echo "  if [[ -n \"\$project_root\" ]]; then"
   echo "    \"\$project_root/vendor/drush/drush/drush\" \"\$@\""
   echo "  else"
-  echo "    echo \"Drush not found! Make sure you are inside a Drupal project.\""
+  echo "    echo \"Drush não encontrado! Certifique-se de estar dentro de um projeto Drupal.\""
   echo "    return 1"
   echo "  fi"
   echo "}"
   echo ""
-  echo "# Function to fix permissions on Drupal files directory"
+  echo "# Função para corrigir permissões do diretório files do Drupal"
   echo "fix-perms() {"
   echo "  local current_user=\$(whoami)"
   echo "  local target_dir=\"\${1:-\"web/sites/default/files\"}\""
@@ -255,21 +252,33 @@ echo -e "\n${GREEN}Configuring Zsh...${NC}"
   echo "    fi"
   echo "  fi"
   echo ""
-  echo "  echo \"Fixing permissions for \$current_user:www-data on \$target_dir...\""
+  echo "  echo \"Corrigindo permissões para \$current_user:www-data em \$target_dir...\""
   echo "  sudo chown -R \$current_user:www-data \$target_dir"
   echo "  sudo chmod -R 2775 \$target_dir"
   echo "  sudo setfacl -R -m u:\${current_user}:rwx \$target_dir"
   echo "  sudo setfacl -R -m g:www-data:rwx \$target_dir"
   echo "  sudo setfacl -R -d -m u:\${current_user}:rwx \$target_dir"
   echo "  sudo setfacl -R -d -m g:www-data:rwx \$target_dir"
-  echo "  echo \"Permissions fixed successfully!\""
+  echo "  echo \"Permissões corrigidas com sucesso!\""
   echo "}"
   echo ""
-  echo "# Function to create an Nginx vhost"
+  echo "# Função para criar um vhost do Nginx"
+  echo "#"
+  echo "# Uso: create-vhost <dominio> <caminho_absoluto>"
+  echo "# Exemplo: create-vhost meusite.localhost /var/www/meusite/web"
+  echo "#"
+  echo "# Após criar, o vhost é automaticamente habilitado."
+  echo "# Para desabilitar: disable-vhost <dominio>"
+  echo "# Para reabilitar:  enable-vhost <dominio>"
+  echo "#"
   echo "create-vhost() {"
   echo "  if [ -z \"\$1\" ] || [ -z \"\$2\" ]; then"
-  echo "    echo \"Usage: create-vhost <domain.local> <absolute_path_to_root>\""
-  echo "    echo \"Example: create-vhost mysite.local /var/www/mysite/web\""
+  echo "    echo \"Uso: create-vhost <dominio> <caminho_absoluto_da_raiz>\""
+  echo "    echo \"Exemplo: create-vhost meusite.localhost /var/www/meusite/web\""
+  echo "    echo \"\""
+  echo "    echo \"Gerenciamento:\""
+  echo "    echo \"  disable-vhost <dominio>  - Desabilita o vhost sem apagar o arquivo\""
+  echo "    echo \"  enable-vhost <dominio>   - Reabilita um vhost desabilitado\""
   echo "    return 1"
   echo "  fi"
   echo "  local domain=\$1"
@@ -277,11 +286,11 @@ echo -e "\n${GREEN}Configuring Zsh...${NC}"
   echo "  local vhost_file=\"/etc/nginx/sites-available/\$domain\""
   echo ""
   echo "  if [ ! -d \"\$root_dir\" ]; then"
-  echo "    echo \"Error: The directory \$root_dir does not exist.\""
+  echo "    echo \"Erro: O diretório \$root_dir não existe.\""
   echo "    return 1"
   echo "  fi"
   echo ""
-  echo "  echo \"Creating Nginx vhost for \$domain...\""
+  echo "  echo \"Criando vhost do Nginx para \$domain...\""
   echo "  cat > \"\$vhost_file\" <<VHOSTEOF"
   echo "server {"
   echo "    listen 80;"
@@ -333,101 +342,146 @@ echo -e "\n${GREEN}Configuring Zsh...${NC}"
   echo ""
   echo "  ln -s \"\$vhost_file\" \"/etc/nginx/sites-enabled/\" 2>/dev/null || true"
   echo "  sudo systemctl restart nginx"
-  echo "  echo \"Vhost created and enabled: http://\$domain\""
-  echo "  echo \"Make sure to add '\$domain' to your Windows hosts file.\""
+  echo "  echo \"Vhost criado e habilitado: http://\$domain\""
+  echo "  echo \"Adicione '\$domain' ao arquivo hosts do Windows.\""
   echo "}"
   echo ""
-  echo "# Function to create a MySQL database and user"
+  echo "# Função para desabilitar um vhost (remove o link simbólico)"
+  echo "disable-vhost() {"
+  echo "  if [ -z \"\$1\" ]; then"
+  echo "    echo \"Uso: disable-vhost <dominio>\""
+  echo "    return 1"
+  echo "  fi"
+  echo "  local domain=\$1"
+  echo "  local enabled_link=\"/etc/nginx/sites-enabled/\$domain\""
+  echo ""
+  echo "  if [ ! -L \"\$enabled_link\" ]; then"
+  echo "    echo \"O vhost '\$domain' não está habilitado ou não existe.\""
+  echo "    return 1"
+  echo "  fi"
+  echo ""
+  echo "  rm \"\$enabled_link\""
+  echo "  sudo systemctl restart nginx"
+  echo "  echo \"Vhost '\$domain' desabilitado com sucesso.\""
+  echo "}"
+  echo ""
+  echo "# Função para habilitar um vhost existente"
+  echo "enable-vhost() {"
+  echo "  if [ -z \"\$1\" ]; then"
+  echo "    echo \"Uso: enable-vhost <dominio>\""
+  echo "    return 1"
+  echo "  fi"
+  echo "  local domain=\$1"
+  echo "  local vhost_file=\"/etc/nginx/sites-available/\$domain\""
+  echo "  local enabled_link=\"/etc/nginx/sites-enabled/\$domain\""
+  echo ""
+  echo "  if [ ! -f \"\$vhost_file\" ]; then"
+  echo "    echo \"Erro: O arquivo de vhost '/etc/nginx/sites-available/\$domain' não existe.\""
+  echo "    echo \"Use 'create-vhost' para criar um novo vhost.\""
+  echo "    return 1"
+  echo "  fi"
+  echo ""
+  echo "  if [ -L \"\$enabled_link\" ]; then"
+  echo "    echo \"O vhost '\$domain' já está habilitado.\""
+  echo "    return 0"
+  echo "  fi"
+  echo ""
+  echo "  ln -s \"\$vhost_file\" \"\$enabled_link\""
+  echo "  sudo systemctl restart nginx"
+  echo "  echo \"Vhost '\$domain' habilitado com sucesso.\""
+  echo "}"
+  echo ""
+  echo "# Função para criar um banco de dados e usuário no MariaDB"
   echo "create-db() {"
   echo "  if [ -z \"\$1\" ]; then"
-  echo "    echo \"Usage: create-db <db_and_user_name>\""
-  echo "    echo \"This creates a database and a user with identical names, and grants all privileges.\""
+  echo "    echo \"Uso: create-db <nome>\""
+  echo "    echo \"Cria um banco de dados e um usuário com o mesmo nome e senha.\""
   echo "    return 1"
   echo "  fi"
   echo "  local name=\$1"
-  echo "  echo \"Creating database: \$name\""
+  echo "  echo \"Criando banco de dados: \$name\""
   echo "  sudo mysql -e \"CREATE DATABASE IF NOT EXISTS \\\`\$name\\\`;\""
-  echo "  echo \"Creating user: \$name with password: \$name\""
+  echo "  echo \"Criando usuário: \$name com senha: \$name\""
   echo "  sudo mysql -e \"CREATE USER IF NOT EXISTS '\$name'@'localhost' IDENTIFIED BY '\$name';\""
-  echo "  echo \"Granting privileges...\""
+  echo "  echo \"Concedendo privilégios...\""
   echo "  sudo mysql -e \"GRANT ALL PRIVILEGES ON \\\`\$name\\\`.* TO '\$name'@'localhost';\""
   echo "  sudo mysql -e \"FLUSH PRIVILEGES;\""
-  echo "  echo \"Database & User \$name created successfully!\""
+  echo "  echo \"Banco de dados e usuário '\$name' criados com sucesso!\""
   echo "}"
   echo ""
-  echo "# Function to delete a MySQL database and user"
+  echo "# Função para excluir um banco de dados e usuário"
   echo "delete-db() {"
   echo "  if [ -z \"\$1\" ]; then"
-  echo "    echo \"Usage: delete-db <db_and_user_name>\""
+  echo "    echo \"Uso: delete-db <nome>\""
   echo "    return 1"
   echo "  fi"
   echo "  local name=\$1"
-  echo "  read -p \"Are you sure you want to drop the database and user '\$name'? [y/N] \" confirm"
-  echo "  if [[ \$confirm == [yY] || \$confirm == [yY][eE][sS] ]]; then"
-  echo "    echo \"Dropping user: \$name...\""
+  echo "  read -p \"Tem certeza que deseja excluir o banco e o usuário '\$name'? [s/N] \" confirm"
+  echo "  if [[ \$confirm == [sS] || \$confirm == [sS][iI][mM] ]]; then"
+  echo "    echo \"Excluindo usuário: \$name...\""
   echo "    sudo mysql -e \"DROP USER IF EXISTS '\$name'@'localhost';\""
-  echo "    echo \"Dropping database: \$name...\""
+  echo "    echo \"Excluindo banco de dados: \$name...\""
   echo "    sudo mysql -e \"DROP DATABASE IF EXISTS \\\`\$name\\\`;\""
-  echo "    echo \"Database and user \$name removed successfully!\""
+  echo "    echo \"Banco de dados e usuário '\$name' removidos com sucesso!\""
   echo "  else"
-  echo "    echo \"Operation cancelled.\""
+  echo "    echo \"Operação cancelada.\""
   echo "  fi"
   echo "}"
   echo ""
-  echo "# Function to initialize a Drupal project (copy default settings and set permissions)"
+  echo "# Função para inicializar um projeto Drupal (copia default.settings.php e dá permissões)"
   echo "init-drupal() {"
   echo "  local settings_dir=\"web/sites/default\""
   echo "  local default_file=\"\$settings_dir/default.settings.php\""
   echo "  local settings_file=\"\$settings_dir/settings.php\""
   echo ""
   echo "  if [ ! -d \"\$settings_dir\" ]; then"
-  echo "    echo \"Error: Directory '\$settings_dir' not found. Are you in the Drupal project root?\""
+  echo "    echo \"Erro: Diretório '\$settings_dir' não encontrado. Você está na raiz do projeto Drupal?\""
   echo "    return 1"
   echo "  fi"
   echo ""
   echo "  if [ ! -f \"\$default_file\" ]; then"
-  echo "    echo \"Error: '\$default_file' not found.\""
+  echo "    echo \"Erro: '\$default_file' não encontrado.\""
   echo "    return 1"
   echo "  fi"
   echo ""
-  echo "  echo \"Copying default.settings.php to settings.php...\""
+  echo "  echo \"Copiando default.settings.php para settings.php...\""
   echo "  cp \"\$default_file\" \"\$settings_file\""
   echo ""
-  echo "  echo \"Setting permissions...\""
+  echo "  echo \"Configurando permissões...\""
   echo "  chmod 666 \"\$settings_file\""
   echo "  chmod 775 \"\$settings_dir\""
-  echo "  echo \"init-drupal done! You can now install Drupal. After installation, run 'adjust-drupal' to finalize.\""
+  echo "  echo \"init-drupal concluído! Agora instale o Drupal. Após a instalação, rode 'adjust-drupal'.\""
   echo "}"
   echo ""
-  echo "# Function to adjust Drupal directories and settings after installation"
+  echo "# Função para ajustar diretórios e settings.php após a instalação do Drupal"
   echo "adjust-drupal() {"
   echo "  local settings_dir=\"web/sites/default\""
   echo "  local settings_file=\"\$settings_dir/settings.php\""
   echo ""
   echo "  if [ ! -d \"\$settings_dir\" ]; then"
-  echo "    echo \"Error: Directory '\$settings_dir' not found. Are you in the Drupal project root?\""
+  echo "    echo \"Erro: Diretório '\$settings_dir' não encontrado. Você está na raiz do projeto Drupal?\""
   echo "    return 1"
   echo "  fi"
   echo ""
-  echo "  echo \"Creating 'files' and 'private_files' directories...\""
+  echo "  echo \"Criando diretórios 'files' e 'private_files'...\""
   echo "  mkdir -p \"\$settings_dir/files\""
   echo "  mkdir -p \"\$settings_dir/private_files\""
   echo ""
   echo "  if [ -f \"\$settings_file\" ]; then"
-  echo "    echo \"Removing existing config_sync_directory definition(s)...\""
+  echo "    echo \"Removendo definições existentes de config_sync_directory...\""
   echo "    sed -i '/\$settings\\['\\''config_sync_directory'\\''\\]/d' \"\$settings_file\""
   echo "    sed -i '/\$settings\\[\"config_sync_directory\"\\]/d' \"\$settings_file\""
   echo ""
-  echo "    echo \"Appending new sync and private path settings...\""
+  echo "    echo \"Adicionando configurações de sync e private path...\""
   echo "    echo \"\" >> \"\$settings_file\""
   echo "    echo \"\\\$settings['config_sync_directory'] = '../config/sync';\" >> \"\$settings_file\""
   echo "    echo \"\\\$settings['file_private_path'] = \\\$app_root . '/sites/default/private_files';\" >> \"\$settings_file\""
-  echo "    echo \"Settings updated successfully!\""
+  echo "    echo \"Settings atualizadas com sucesso!\""
   echo "  else"
-  echo "    echo \"Warning: '\$settings_file' not found. Run 'init-drupal' first.\""
+  echo "    echo \"Aviso: '\$settings_file' não encontrado. Rode 'init-drupal' primeiro.\""
   echo "  fi"
   echo "  "
-  echo "  echo \"Giving appropriate permissions...\""
+  echo "  echo \"Corrigindo permissões...\""
   echo "  fix-perms"
   echo "}"
   echo ""
@@ -441,16 +495,15 @@ echo -e "\n${GREEN}Configuring Zsh...${NC}"
   echo "alias logs=\"tail -f /var/log/nginx/error.log\""
   echo "alias phplog=\"tail -f /var/log/php8.4-fpm.log\""
   echo "alias fp=\"fix-perms\""
-  echo ""
   echo "alias ss1=\"npx sass scss/style.scss css/style.css -w --no-source-map\""
   echo "alias ss2=\"npx sass scss/ck5style.scss css/ck5style.css -w --no-source-map\""
   echo ""
 } > ~/.zshrc
 
-echo -e "\n${GREEN}Installing Starship...${NC}"
+echo -e "\n${GREEN}Instalando Starship...${NC}"
 curl -sS https://starship.rs/install.sh | sh -s -- -y
 
-echo -e "\n${GREEN}Installing NVM & Node.js LTS...${NC}"
+echo -e "\n${GREEN}Instalando NVM e Node.js LTS...${NC}"
 export NVM_DIR="$HOME/.nvm"
 curl -sL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
@@ -458,26 +511,25 @@ nvm install --lts
 nvm use --lts
 nvm alias default 'lts/*'
 
-echo -e "\n${GREEN}Configuring Starship with Catppuccin Powerline (Macchiato)...${NC}"
+echo -e "\n${GREEN}Configurando Starship com Catppuccin Powerline (Macchiato)...${NC}"
 mkdir -p ~/.config
 starship preset catppuccin-powerline -o ~/.config/starship.toml
 sed -i "s/palette = 'catppuccin_mocha'/palette = 'catppuccin_macchiato'/g" ~/.config/starship.toml
 
-echo -e "\n${GREEN}Zsh and Starship installed and configured. Please restart or open a new terminal to use Zsh.${NC}"
+echo -e "\n${GREEN}Zsh e Starship instalados e configurados.${NC}"
 
-# Final summary
-echo -e "\n${GREEN}Installation summary:${NC}"
+# Resumo final
+echo -e "\n${GREEN}Resumo da instalação:${NC}"
 if [ $FAILED -eq 0 ]; then
-  echo -e "${GREEN}✓ Installation completed successfully! All components were installed correctly.${NC}"
+  echo -e "${GREEN}✓ Instalação concluída com sucesso! Todos os componentes foram instalados corretamente.${NC}"
 else
-  echo -e "${RED}✗ Installation completed with $FAILED errors.${NC}"
+  echo -e "${RED}✗ Instalação concluída com $FAILED erro(s).${NC}"
 fi
 
-# Clean up
+# Limpeza
 sudo apt autoremove -y
 
-echo -e "\n${GREEN}Applying Zsh configuration automatically...${NC}"
-# Check if we are in zsh, if not, exec zsh
+echo -e "\n${GREEN}Aplicando configuração do Zsh automaticamente...${NC}"
 if [ -n "$ZSH_VERSION" ]; then
    source ~/.zshrc
 else
