@@ -1,133 +1,103 @@
-# Drupal on Ubuntu
+# 🚀 Drupal Setup — Nginx + PHP-FPM + MariaDB
 
-Drupal on Ubuntu is a project that facilitates quick configuration of Ubuntu-based distributions for people who want to work with Drupal 10/11.
+Script de configuração automática de um ambiente de desenvolvimento Drupal 10/11 em distribuições Ubuntu (WSL ou nativo).
 
-## 🚀 Installation
-
-To install, clone the repository and run the configuration script:
+## Instalação
 
 ```bash
-cd ~
-git clone https://github.com/tiagohenriqueferreira/setup-nginx.git
-cd setup-nginx
-sudo chmod +x install.sh
+git clone https://github.com/tiagohenriqueferreira/setup-nginx.git ~/setup-nginx
+cd ~/setup-nginx
+chmod +x install.sh
 ./install.sh
 ```
 
-## 📦 Installed Software
+## O que é instalado
 
-The script automatically installs and configures:
+| Software | Detalhes |
+|---|---|
+| Nginx | Servidor web principal |
+| PHP 8.4-FPM | Com módulos: mysql, gd, xml, mbstring, curl, zip, intl, bcmath, opcache, apcu, uploadprogress, imagick, ldap |
+| MariaDB | Banco de dados |
+| Composer | Gerenciador de dependências PHP |
+| NVM | Node Version Manager com Node.js LTS |
+| Zsh | Shell padrão com Oh My Zsh |
+| Starship | Prompt customizado (preset Catppuccin Powerline Macchiato) |
+| FastFetch | Informações do sistema no terminal |
+| SASS | Via `npx` (instalado pelo Node.js) |
 
-- Nginx
-- PHP 8.4-FPM + Essential modules
-- Composer
-- MariaDB
-- FFmpeg
-- NVM (Node Version Manager) com NodeJS LTS e Npm
+## Configuração do PHP
 
-## 💡 Features
+O script ajusta automaticamente o `php.ini` do FPM:
 
-- Automated environment configuration
-- Installation of essential packages
-- Development environment setup
-- Performance optimizations
+| Diretiva | Valor |
+|---|---|
+| `memory_limit` | 2048M |
+| `upload_max_filesize` | 512M |
+| `post_max_size` | 2048M |
+| `max_execution_time` | 180s |
+| `max_input_time` | 180s |
+| APCu `shm_size` | 128M |
 
-## 💻 System Requirements
+## Funções disponíveis no terminal
 
-- Ubuntu 22.04 LTS or newer Ubuntu-based distribution
-- Root/sudo access
-- Internet connection
-- Minimum 4GB RAM recommended
-- 20GB disk space
+Após a instalação, o seu `.zshrc` terá estas funções prontas para uso:
 
-## 🐘 PHP Configuration
+### Automação Nginx e Banco de Dados
 
-The script automatically configures PHP-FPM with the following limits:
+| Comando | O que faz |
+|---|---|
+| `create-vhost <dominio> <diretorio>` | Cria um server block do Nginx otimizado para Drupal e reinicia o serviço |
+| `create-db <nome>` | Cria banco de dados + usuário no MariaDB (mesmo nome e senha) |
+| `delete-db <nome>` | Exclui banco de dados e usuário (pede confirmação) |
+| `init-drupal` | Na raiz do projeto: cria `files/`, `private_files/`, configura `config_sync_directory` e `file_private_path` no `settings.php` e corrige permissões |
+| `fix-perms [dir]` | Corrige permissões do diretório de arquivos do Drupal para `usuario:www-data` |
+| `drush` | Wrapper global que encontra e executa o Drush local do projeto automaticamente |
 
-- memory_limit = 2048M
-- upload_max_filesize = 512M
-- post_max_size = 2048M
-- max_execution_time = 180
-- max_input_time = 180
+### Aliases
 
-Additionally, PHP APCu (Alternative PHP Cache) is configured with 128MB of shared memory for improved performance, providing better caching and faster response times for Drupal.
+| Alias | Comando |
+|---|---|
+| `sites` | `cd /var/www/` |
+| `vhosts` | `cd /etc/nginx/sites-available/` |
+| `update` | Atualiza e faz upgrade de todos os pacotes via Nala |
+| `rnx` | Reinicia o Nginx |
+| `rmdb` | Reinicia o MariaDB |
+| `logs` | `tail -f` no log de erros do Nginx |
+| `phplog` | `tail -f` no log do PHP-FPM |
+| `fp` | Atalho para `fix-perms` |
+| `ss1` | Compila `scss/style.scss` → `css/style.css` em watch mode |
+| `ss2` | Compila `scss/ck5style.scss` → `css/ck5style.css` em watch mode |
 
-## 🔧 Usage
+## Permissões
 
-After installation, you have some new tools in your `.zshrc`:
+O script configura automaticamente:
 
-### 💻 Nginx & Database Automation Functions
+- `/var/www` — propriedade do seu usuário com grupo `www-data`
+- `/etc/nginx/sites-available` e `sites-enabled` — editáveis sem `sudo`
+- Diretórios `files/` do Drupal — permissões via ACL (`setfacl`)
 
-Estas funções facilitam muito o dia a dia, gerando de maneira automatizada vhosts do Nginx ou bancos de dados locais.
+## Shell e Plugins
 
-- `init-drupal` - Executado na raiz do seu projeto, esse comando cria os diretórios `files` e `private_files` no local padrão, aponta as váriaveis `$settings['config_sync_directory']` e `$settings['file_private_path']` no seu `settings.php` e acerta as permissões do diretório para o Nginx.
-- `create-vhost <dominio> <diretorio>` - Cria um Vhost Nginx perfeito pro Drupal e reinicia o Nginx.
-- `create-db <nome>` - Cria um banco de dados e usuário no MariaDB com acesso total.
-- `delete-db <nome>` - Exclui um banco de dados e seu usuário.
+- **Zsh** como shell padrão
+- **Oh My Zsh** com os plugins: `git`, `ssh-agent`, `zsh-autosuggestions`, `fzf`, `z`, `zsh-syntax-highlighting`
+- **Starship** com o preset `catppuccin-powerline` (flavor `macchiato`)
 
-### 🛠️ Bash Aliases
+## Troubleshooting
 
-- `sites` - Navigate to `/var/www/`
-- `vhosts` - Navigate to `/etc/nginx/sites-available/`
-- `update` - Update packages and upgrade automatically using Nala
-- `rnx` - Restart Nginx service (`sudo service nginx restart`)
-- `rmdb` - Restart MariaDB service (`sudo service mariadb restart`)
-- `logs` - Tails the Nginx error log in real time (`/var/log/nginx/error.log`)
-- `phplog` - Tails the PHP-FPM error log in real time (`/var/log/php8.4-fpm.log`)
-- `fp` - Fix permissions on Drupal files directory
-- `drush` - Global wrapper for local Drush bins (`./vendor/drush/drush/drush`)
-- `ss1` - Compiles `scss/style.scss` to `css/style.css` using `npx sass` in watch mode
-- `ss2` - Compiles `scss/ck5style.scss` to `css/ck5style.css` using `npx sass` in watch mode
-
-## 🔍 Troubleshooting
-
-- If Nginx doesn't start, check ports with: `sudo netstat -tuln | grep 80`
-- For permission issues: `sudo chown -R www-data:www-data /var/www/html`
-- System logs: `sudo journalctl -xe`
-
-## 🐚 Shell Configuration
-
-The script installs and configures:
-
-- Zsh as default shell
-- Oh My Zsh with af-magic theme
-- Plugins: git, ssh-agent, zsh-autosuggestions, zsh-syntax-highlighting, fzf, z
-
-## 🔒 Security
-
-Remember to:
-
-- Change default database passwords
-- Configure firewalls properly
-- Keep the system updated using provided aliases
-
-## 🤝 Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add: new feature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📬 Contact
-
-Tiago Henrique Ferreira - [tiagohenriqueferreira@gmail.com](mailto:tiagohenriqueferreira@gmail.com)
-
-Project Link: [https://github.com/tiagohenriqueferreira/setup-nginx](https://github.com/tiagohenriqueferreira/setup-nginx)
-
-## 📝 License
-
-This project is under the MIT License. See the `LICENSE` file for more information.
+| Problema | Solução |
+|---|---|
+| Nginx não inicia | `sudo netstat -tuln \| grep 80` para verificar conflito de porta |
+| Apache2 instalado | O script já remove automaticamente, mas se persistir: `sudo apt purge 'apache2*'` |
+| Permissões no `/var/www` | `fp` ou `fix-perms` na pasta do projeto |
+| Logs do sistema | `sudo journalctl -xeu nginx` ou `sudo journalctl -xeu php8.4-fpm` |
 
 ---
 
-![Ubuntu](https://img.shields.io/badge/Ubuntu-Latest-orange.svg)
-![Zsh](https://img.shields.io/badge/Zsh-Latest-yellow.svg)
+![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04-orange.svg)
 ![Nginx](https://img.shields.io/badge/Nginx-Latest-green.svg)
-![PHP Version](https://img.shields.io/badge/PHP-Latest-purple.svg)
-![Composer](https://img.shields.io/badge/Composer-Latest-yellow.svg)
+![PHP](https://img.shields.io/badge/PHP-8.4--FPM-purple.svg)
 ![MariaDB](https://img.shields.io/badge/MariaDB-Latest-blue.svg)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Latest-blue.svg)
+![Composer](https://img.shields.io/badge/Composer-Latest-yellow.svg)
 ![NVM](https://img.shields.io/badge/NVM-Latest-green.svg)
+![Zsh](https://img.shields.io/badge/Zsh-Oh_My_Zsh-yellow.svg)
+![Starship](https://img.shields.io/badge/Starship-Catppuccin-pink.svg)
