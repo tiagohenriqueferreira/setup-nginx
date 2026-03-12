@@ -628,6 +628,36 @@ adjust-drupal() {
 }
 
 # ─────────────────────────────────────────────
+# Verificação de serviços
+# ─────────────────────────────────────────────
+
+# Verifica o status dos serviços Nginx, PHP-FPM e MariaDB
+#
+# Uso: check-services
+#
+check-services() {
+  local services=(nginx php8.4-fpm mariadb)
+  echo "Verificando serviços..."
+  for svc in "${services[@]}"; do
+    if systemctl is-active --quiet "$svc"; then
+      echo -e "\033[0;32m✓ $svc está rodando\033[0m"
+    else
+      echo -e "\033[0;31m✗ $svc não está rodando\033[0m"
+    fi
+  done
+}
+
+# Reinicia Nginx, PHP-FPM e MariaDB
+#
+# Uso: restart-services
+#
+restart-services() {
+  echo "Reiniciando serviços..."
+  sudo systemctl restart nginx php8.4-fpm mariadb
+  check-services
+}
+
+# ─────────────────────────────────────────────
 # Aliases
 # ─────────────────────────────────────────────
 
