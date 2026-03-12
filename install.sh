@@ -193,390 +193,451 @@ fi
 
 # Configurar Zsh
 echo -e "\n${GREEN}Configurando Zsh...${NC}"
-{
-  echo "# Configuração do Oh My Zsh"
-  echo "export ZSH=\"\$HOME/.oh-my-zsh\""
-  echo "ZSH_THEME=\"af-magic\""
-  echo ""
-  echo "# Plugins"
-  echo "plugins=("
-  echo "  git"
-  echo "  ssh-agent"
-  echo "  zsh-autosuggestions"
-  echo "  fzf"
-  echo "  z"
-  echo "  zsh-syntax-highlighting"
-  echo ")"
-  echo ""
-  echo "source \$ZSH/oh-my-zsh.sh"
-  echo ""
-  echo "# Configuração do NVM"
-  echo "export NVM_DIR=\"\\\$HOME/.nvm\""
-  echo "[ -s \"\\\$NVM_DIR/nvm.sh\" ] && \\. \"\\\$NVM_DIR/nvm.sh\""
-  echo "[ -s \"\\\$NVM_DIR/bash_completion\" ] && \\. \"\\\$NVM_DIR/bash_completion\""
-  echo ""
-  echo "# Prompt Starship"
-  echo "eval \"\$(starship init zsh)\""
-  echo ""
-  echo "# Função que executa o Drush independente do diretório atual"
-  echo "drush() {"
-  echo "  local current_dir=\$(pwd)"
-  echo "  local project_root=\"\""
-  echo ""
-  echo "  while [[ \"\$current_dir\" != \"/\" ]]; do"
-  echo "    if [[ -f \"\$current_dir/vendor/drush/drush/drush\" ]]; then"
-  echo "      project_root=\"\$current_dir\""
-  echo "      break"
-  echo "    fi"
-  echo "    current_dir=\$(dirname \"\$current_dir\")"
-  echo "  done"
-  echo ""
-  echo "  if [[ -n \"\$project_root\" ]]; then"
-  echo "    \"\$project_root/vendor/drush/drush/drush\" \"\$@\""
-  echo "  else"
-  echo "    echo \"Drush não encontrado! Certifique-se de estar dentro de um projeto Drupal.\""
-  echo "    return 1"
-  echo "  fi"
-  echo "}"
-  echo ""
-  echo "# Função para corrigir permissões do diretório files do Drupal"
-  echo "fix-perms() {"
-  echo "  local current_user=\$(whoami)"
-  echo "  local target_dir=\"\${1:-\"web/sites/default/files\"}\""
-  echo ""
-  echo "  if [ ! -d \"\$target_dir\" ]; then"
-  echo "    if [ -d \"sites/default/files\" ]; then"
-  echo "      target_dir=\"sites/default/files\""
-  echo "    fi"
-  echo "  fi"
-  echo ""
-  echo "  echo \"Corrigindo permissões para \$current_user:www-data em \$target_dir...\""
-  echo "  sudo chown -R \$current_user:www-data \$target_dir"
-  echo "  sudo chmod -R 2775 \$target_dir"
-  echo "  sudo setfacl -R -m u:\${current_user}:rwx \$target_dir"
-  echo "  sudo setfacl -R -m g:www-data:rwx \$target_dir"
-  echo "  sudo setfacl -R -d -m u:\${current_user}:rwx \$target_dir"
-  echo "  sudo setfacl -R -d -m g:www-data:rwx \$target_dir"
-  echo "  echo \"Permissões corrigidas com sucesso!\""
-  echo "}"
-  echo ""
-  echo "# Função para criar um vhost do Nginx"
-  echo "#"
-  echo "# Uso: create-vhost <dominio> <caminho_absoluto>"
-  echo "# Exemplo: create-vhost meusite.localhost /var/www/meusite/web"
-  echo "#"
-  echo "# Após criar, o vhost é automaticamente habilitado."
-  echo "# Para desabilitar: disable-vhost <dominio>"
-  echo "# Para reabilitar:  enable-vhost <dominio>"
-  echo "#"
-  echo "create-vhost() {"
-  echo "  if [ -z \"\$1\" ] || [ -z \"\$2\" ]; then"
-  echo "    echo \"Uso: create-vhost <dominio> <caminho_absoluto_da_raiz>\""
-  echo "    echo \"Exemplo: create-vhost meusite.localhost /var/www/meusite/web\""
-  echo "    echo \"\""
-  echo "    echo \"Gerenciamento:\""
-  echo "    echo \"  disable-vhost <dominio>  - Desabilita o vhost sem apagar o arquivo\""
-  echo "    echo \"  enable-vhost <dominio>   - Reabilita um vhost desabilitado\""
-  echo "    return 1"
-  echo "  fi"
-  echo "  local domain=\$1"
-  echo "  local root_dir=\$2"
-  echo "  local vhost_file=\"/etc/nginx/sites-available/\$domain\""
-  echo ""
-  echo "  if [ ! -d \"\$root_dir\" ]; then"
-  echo "    echo \"Erro: O diretório \$root_dir não existe.\""
-  echo "    return 1"
-  echo "  fi"
-  echo ""
-  echo "  echo \"Criando vhost do Nginx para \$domain...\""
-  echo "  cat > \"\$vhost_file\" <<VHOSTEOF"
-  echo "server {"
-  echo "    listen 80;"
-  echo "    listen [::]:80;"
-  echo "    server_name \$domain;"
-  echo "    root \$root_dir;"
-  echo ""
-  echo "    index index.php index.html;"
-  echo ""
-  echo "    location / {"
-  echo '        try_files \$uri /index.php?\$query_string;'
-  echo "    }"
-  echo ""
-  echo "    location @rewrite {"
-  echo '        rewrite ^/(.*)$ /index.php?q=\$1;'
-  echo "    }"
-  echo ""
-  echo "    location ~ '\.php\$|^/update.php' {"
-  echo '        fastcgi_split_path_info ^(.+?\.php)(|/.*)$;'
-  echo "        include fastcgi_params;"
-  echo "        include snippets/fastcgi-php.conf;"
-  echo '        fastcgi_param HTTP_PROXY \"\";'
-  echo '        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;'
-  echo '        fastcgi_param PATH_INFO \$fastcgi_path_info;'
-  echo '        fastcgi_param QUERY_STRING \$query_string;'
-  echo "        fastcgi_intercept_errors on;"
-  echo "        fastcgi_pass unix:/run/php/php8.4-fpm.sock;"
-  echo "    }"
-  echo ""
-  echo "    location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg)\$ {"
-  echo '        try_files \$uri @rewrite;'
-  echo "        expires max;"
-  echo "        log_not_found off;"
-  echo "    }"
-  echo ""
-  echo "    location ~ ^/sites/.*/files/styles/ {"
-  echo '        try_files \$uri @rewrite;'
-  echo "    }"
-  echo ""
-  echo "    location ~ ^(/[a-z\\-]+)?/system/files/ {"
-  echo '        try_files \$uri /index.php?\$query_string;'
-  echo "    }"
-  echo ""
-  echo "    location ~* \\.(engine|inc|info|install|make|module|profile|test|po|sh|.*sql|theme|twig|tpl(\\.php)?|xtmpl)([a-z\\-]+)?\$ {"
-  echo "        deny all;"
-  echo "    }"
-  echo "}"
-  echo "VHOSTEOF"
-  echo ""
-  echo "  ln -s \"\$vhost_file\" \"/etc/nginx/sites-enabled/\" 2>/dev/null || true"
-  echo "  sudo systemctl restart nginx"
-  echo "  echo \"Vhost criado e habilitado: http://\$domain\""
-  echo "}"
-  echo ""
-  echo "# Função para desabilitar um vhost (remove o link simbólico)"
-  echo "disable-vhost() {"
-  echo "  if [ -z \"\$1\" ]; then"
-  echo "    echo \"Uso: disable-vhost <dominio>\""
-  echo "    return 1"
-  echo "  fi"
-  echo "  local domain=\$1"
-  echo "  local enabled_link=\"/etc/nginx/sites-enabled/\$domain\""
-  echo ""
-  echo "  if [ ! -L \"\$enabled_link\" ]; then"
-  echo "    echo \"O vhost '\$domain' não está habilitado ou não existe.\""
-  echo "    return 1"
-  echo "  fi"
-  echo ""
-  echo "  rm \"\$enabled_link\""
-  echo "  sudo systemctl restart nginx"
-  echo "  echo \"Vhost '\$domain' desabilitado com sucesso.\""
-  echo "}"
-  echo ""
-  echo "# Função para habilitar um vhost existente"
-  echo "enable-vhost() {"
-  echo "  if [ -z \"\$1\" ]; then"
-  echo "    echo \"Uso: enable-vhost <dominio>\""
-  echo "    return 1"
-  echo "  fi"
-  echo "  local domain=\$1"
-  echo "  local vhost_file=\"/etc/nginx/sites-available/\$domain\""
-  echo "  local enabled_link=\"/etc/nginx/sites-enabled/\$domain\""
-  echo ""
-  echo "  if [ ! -f \"\$vhost_file\" ]; then"
-  echo "    echo \"Erro: O arquivo de vhost '/etc/nginx/sites-available/\$domain' não existe.\""
-  echo "    echo \"Use 'create-vhost' para criar um novo vhost.\""
-  echo "    return 1"
-  echo "  fi"
-  echo ""
-  echo "  if [ -L \"\$enabled_link\" ]; then"
-  echo "    echo \"O vhost '\$domain' já está habilitado.\""
-  echo "    return 0"
-  echo "  fi"
-  echo ""
-  echo "  ln -s \"\$vhost_file\" \"\$enabled_link\""
-  echo "  sudo systemctl restart nginx"
-  echo "  echo \"Vhost '\$domain' habilitado com sucesso.\""
-  echo "}"
-  echo ""
-  echo "# Função para criar um banco de dados e usuário no MariaDB"
-  echo "create-db() {"
-  echo "  if [ -z \"\$1\" ]; then"
-  echo "    echo \"Uso: create-db <nome>\""
-  echo "    echo \"Cria um banco de dados e um usuário com o mesmo nome e senha aleatória.\""
-  echo "    return 1"
-  echo "  fi"
-  echo "  local name=\$1"
-  echo "  local password=\$(openssl rand -base64 16 | tr -dc 'a-zA-Z0-9' | head -c 16)"
-  echo "  echo \"Criando banco de dados: \$name\""
-  echo "  sudo mysql -e \"CREATE DATABASE IF NOT EXISTS \\\`\$name\\\`;\""
-  echo "  echo \"Criando usuário: \$name\""
-  echo "  sudo mysql -e \"CREATE USER IF NOT EXISTS '\$name'@'localhost' IDENTIFIED BY '\$password';\""
-  echo "  echo \"Concedendo privilégios...\""
-  echo "  sudo mysql -e \"GRANT ALL PRIVILEGES ON \\\`\$name\\\`.* TO '\$name'@'localhost';\""
-  echo "  sudo mysql -e \"FLUSH PRIVILEGES;\""
-  echo "  echo \"\""
-  echo "  echo \"╔══════════════════════════════════════╗\""
-  echo "  echo \"║  Banco de dados criado com sucesso!  ║\""
-  echo "  echo \"╚══════════════════════════════════════╝\""
-  echo "  echo \"  Database: \$name\""
-  echo "  echo \"  Usuário:  \$name\""
-  echo "  echo \"  Senha:    \$password\""
-  echo "  echo \"  Host:     localhost\""
-  echo "  echo \"\""
-  echo "  echo \"⚠ Guarde essa senha, ela não será exibida novamente!\""
-  echo "}"
-  echo ""
-  echo "# Função para excluir um banco de dados e usuário"
-  echo "delete-db() {"
-  echo "  if [ -z \"\$1\" ]; then"
-  echo "    echo \"Uso: delete-db <nome>\""
-  echo "    return 1"
-  echo "  fi"
-  echo "  local name=\$1"
-  echo "  read -p \"Tem certeza que deseja excluir o banco e o usuário '\$name'? [s/N] \" confirm"
-  echo "  if [[ \$confirm == [sS] || \$confirm == [sS][iI][mM] ]]; then"
-  echo "    echo \"Excluindo usuário: \$name...\""
-  echo "    sudo mysql -e \"DROP USER IF EXISTS '\$name'@'localhost';\""
-  echo "    echo \"Excluindo banco de dados: \$name...\""
-  echo "    sudo mysql -e \"DROP DATABASE IF EXISTS \\\`\$name\\\`;\""
-  echo "    echo \"Banco de dados e usuário '\$name' removidos com sucesso!\""
-  echo "  else"
-  echo "    echo \"Operação cancelada.\""
-  echo "  fi"
-  echo "}"
-  echo ""
-  echo "# Função para inicializar um projeto Drupal"
-  echo "# Copia default.settings.php, dá permissões e cria diretórios files/private_files"
-  echo "init-drupal() {"
-  echo "  local settings_dir=\"web/sites/default\""
-  echo "  local default_file=\"\$settings_dir/default.settings.php\""
-  echo "  local settings_file=\"\$settings_dir/settings.php\""
-  echo ""
-  echo "  if [ ! -d \"\$settings_dir\" ]; then"
-  echo "    echo \"Erro: Diretório '\$settings_dir' não encontrado. Você está na raiz do projeto Drupal?\""
-  echo "    return 1"
-  echo "  fi"
-  echo ""
-  echo "  if [ ! -f \"\$default_file\" ]; then"
-  echo "    echo \"Erro: '\$default_file' não encontrado.\""
-  echo "    return 1"
-  echo "  fi"
-  echo ""
-  echo "  echo \"Copiando default.settings.php para settings.php...\""
-  echo "  cp \"\$default_file\" \"\$settings_file\""
-  echo ""
-  echo "  echo \"Dando permissão de escrita ao settings.php...\""
-  echo "  chmod 666 \"\$settings_file\""
-  echo "  chmod 775 \"\$settings_dir\""
-  echo ""
-  echo "  echo \"Criando diretórios 'files' e 'private_files'...\""
-  echo "  mkdir -p \"\$settings_dir/files\""
-  echo "  mkdir -p \"\$settings_dir/private_files\""
-  echo ""
-  echo "  echo \"Corrigindo permissões dos diretórios...\""
-  echo "  fix-perms"
-  echo "  fix-perms web/sites/default/private_files"
-  echo ""
-  echo "  echo \"init-drupal concluído! Instale o Drupal pelo navegador.\""
-  echo "  echo \"Após a instalação, rode: adjust-drupal\""
-  echo "}"
-  echo ""
-  echo "# Função para ajustar o Drupal após a instalação"
-  echo "# Detecta automaticamente o domínio pelo vhost do Nginx"
-  echo "#"
-  echo "# O que faz:"
-  echo "#   - Remove o diretório config* criado dentro de files/"
-  echo "#   - Remove permissão de escrita do settings.php"
-  echo "#   - Remove linhas existentes de config_sync, private_path e trusted_host"
-  echo "#   - Adiciona o caminho correto do config_sync_directory"
-  echo "#   - Adiciona o caminho do private_files"
-  echo "#   - Adiciona o trusted_host_patterns com o domínio detectado"
-  echo "#"
-  echo "adjust-drupal() {"
-  echo "  local settings_dir=\"web/sites/default\""
-  echo "  local settings_file=\"\$settings_dir/settings.php\""
-  echo "  local project_web=\$(pwd)/web"
-  echo ""
-  echo "  if [ ! -d \"\$settings_dir\" ]; then"
-  echo "    echo \"Erro: Diretório '\$settings_dir' não encontrado. Você está na raiz do projeto Drupal?\""
-  echo "    return 1"
-  echo "  fi"
-  echo ""
-  echo "  if [ ! -f \"\$settings_file\" ]; then"
-  echo "    echo \"Aviso: '\$settings_file' não encontrado. Rode 'init-drupal' primeiro.\""
-  echo "    return 1"
-  echo "  fi"
-  echo ""
-  echo "  # Detectar domínios automaticamente pelos vhosts do Nginx"
-  echo "  local domains=()"
-  echo "  for vhost in /etc/nginx/sites-available/*; do"
-  echo "    if grep -q \"\$project_web\" \"\$vhost\" 2>/dev/null; then"
-  echo "      domains+=(\$(basename \"\$vhost\"))"
-  echo "    fi"
-  echo "  done"
-  echo ""
-  echo "  if [ \${#domains[@]} -eq 0 ]; then"
-  echo "    echo \"Erro: Nenhum vhost encontrado apontando para \$project_web\""
-  echo "    echo \"Crie um vhost primeiro com: create-vhost <dominio> \$project_web\""
-  echo "    return 1"
-  echo "  fi"
-  echo ""
-  echo "  echo \"Domínios detectados: \${domains[*]}\""
-  echo ""
-  echo "  # Remover diretório config* que o Drupal cria dentro de files/"
-  echo "  echo \"Removendo diretório config* de dentro de files/...\""
-  echo "  rm -rf \"\$settings_dir\"/files/config_*"
-  echo ""
-  echo "  # Dar permissão temporária de escrita para editar o settings.php"
-  echo "  chmod 666 \"\$settings_file\""
-  echo ""
-  echo "  # Remover linhas existentes"
-  echo "  echo \"Removendo definições existentes...\""
-  echo "  sed -i '/config_sync_directory/d' \"\$settings_file\""
-  echo "  sed -i '/trusted_host_patterns/d' \"\$settings_file\""
-  echo "  sed -i '/file_private_path/d' \"\$settings_file\""
-  echo ""
-  echo "  # Adicionar novas configurações no final do arquivo"
-  echo "  echo \"Adicionando configurações no settings.php...\""
-  echo "  {"
-  echo "    echo \"\""
-  echo "    echo \"// Configurações adicionadas por adjust-drupal\""
-  echo '    echo "\$settings['"'"'config_sync_directory'"'"'] = '"'"'../config/sync'"'"';"'
-  echo '    echo "\$settings['"'"'file_private_path'"'"'] = \$app_root . '"'"'/sites/default/private_files'"'"';"'
-  echo '    echo "\$settings['"'"'trusted_host_patterns'"'"'] = ["'
-  echo "    for d in \"\${domains[@]}\"; do"
-  echo '      local d_escaped=${d//./\\.}'
-  echo '      echo "  '"'"'^${d_escaped}$'"'"',"'
-  echo "    done"
-  echo "    echo \"];\""
-  echo "  } >> \"\$settings_file\""
-  echo "  # Remover permissão de escrita do settings.php"
-  echo "  echo \"Removendo permissão de escrita do settings.php...\""
-  echo "  chmod 444 \"\$settings_file\""
-  echo ""
-  echo "  echo \"Corrigindo permissões de files/ e private_files/...\""
-  echo "  local current_user=\$(whoami)"
-  echo "  for dir in \"\$settings_dir/files\" \"\$settings_dir/private_files\"; do"
-  echo "    if [ -d \"\$dir\" ]; then"
-  echo "      sudo chown -R \$current_user:www-data \"\$dir\""
-  echo "      sudo find \"\$dir\" -type d -exec chmod 2775 {} \\\\;"
-  echo "      sudo find \"\$dir\" -type f -exec chmod 664 {} \\\\;"
-  echo "    fi"
-  echo "  done"
-  echo ""
-  echo "  echo \"adjust-drupal concluído!\""
-  echo "  echo \"  ✓ config* removido de files/\""
-  echo "  echo \"  ✓ config_sync_directory → ../config/sync\""
-  echo "  echo \"  ✓ file_private_path configurado\""
-  echo "  echo \"  ✓ trusted_host_patterns → \${domains[*]}\""
-  echo "  echo \"  ✓ Permissões corrigidas em files/ e private_files/\""
-  echo "  echo \"  ✓ settings.php travado (somente leitura)\""
-  echo "}"
-  echo ""
+cat << 'ZSHEOF' > ~/.zshrc
+# Configuração do Oh My Zsh
+export ZSH="$HOME/.oh-my-zsh"
+ZSH_THEME="af-magic"
 
-  echo "# Aliases"
-  echo "alias sites=\"cd /var/www/\""
-  echo "alias vhosts=\"cd /etc/nginx/sites-available/\""
-  echo "alias update=\"sudo nala update && sudo nala list --upgradable && sudo nala upgrade -y\""
-  echo "alias rnx=\"sudo service nginx restart\""
-  echo "alias rmdb=\"sudo service mariadb restart\""
-  echo "alias logs=\"tail -f /var/log/nginx/error.log\""
-  echo "alias phplog=\"tail -f /var/log/php8.4-fpm.log\""
-  echo "alias fp=\"fix-perms\""
-  echo "alias ss1=\"npx sass scss/style.scss css/style.css -w --no-source-map\""
-  echo "alias ss2=\"npx sass scss/ck5style.scss css/ck5style.css -w --no-source-map\""
+# Plugins
+plugins=(
+  git
+  ssh-agent
+  zsh-autosuggestions
+  fzf
+  z
+  zsh-syntax-highlighting
+)
+
+source $ZSH/oh-my-zsh.sh
+
+# Configuração do NVM
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+# Prompt Starship
+eval "$(starship init zsh)"
+
+# ─────────────────────────────────────────────
+# Funções utilitárias
+# ─────────────────────────────────────────────
+
+# Função que executa o Drush independente do diretório atual
+drush() {
+  local current_dir=$(pwd)
+  local project_root=""
+
+  while [[ "$current_dir" != "/" ]]; do
+    if [[ -f "$current_dir/vendor/drush/drush/drush" ]]; then
+      project_root="$current_dir"
+      break
+    fi
+    current_dir=$(dirname "$current_dir")
+  done
+
+  if [[ -n "$project_root" ]]; then
+    "$project_root/vendor/drush/drush/drush" "$@"
+  else
+    echo "Drush não encontrado! Certifique-se de estar dentro de um projeto Drupal."
+    return 1
+  fi
+}
+
+# ─────────────────────────────────────────────
+# Permissões
+# ─────────────────────────────────────────────
+
+# Corrige permissões de um diretório do Drupal
+#
+# Uso: fix-perms [diretório]
+# Padrão: web/sites/default/files
+#
+# Permissões aplicadas:
+#   Diretórios → 2775 (SGID + rwx dono/grupo, rx outros)
+#   Arquivos   → 664  (rw dono/grupo, r outros)
+#
+fix-perms() {
+  local current_user=$(whoami)
+  local target_dir="${1:-"web/sites/default/files"}"
+
+  if [ ! -d "$target_dir" ]; then
+    if [ -d "sites/default/files" ]; then
+      target_dir="sites/default/files"
+    else
+      echo "Erro: Diretório '$target_dir' não encontrado."
+      return 1
+    fi
+  fi
+
+  echo "Corrigindo permissões para $current_user:www-data em $target_dir..."
+  sudo chown -R "$current_user":www-data "$target_dir"
+  sudo find "$target_dir" -type d -exec chmod 2775 {} \;
+  sudo find "$target_dir" -type f -exec chmod 664 {} \;
+  echo "Permissões corrigidas com sucesso!"
+}
+
+# ─────────────────────────────────────────────
+# Nginx — Vhosts
+# ─────────────────────────────────────────────
+
+# Cria um server block do Nginx otimizado para Drupal
+#
+# Uso: create-vhost <dominio> <caminho_absoluto>
+# Exemplo: create-vhost meusite.localhost /var/www/meusite/web
+#
+# Após criar, o vhost é automaticamente habilitado.
+# Para desabilitar: disable-vhost <dominio>
+# Para reabilitar:  enable-vhost <dominio>
+#
+create-vhost() {
+  if [ -z "$1" ] || [ -z "$2" ]; then
+    echo "Uso: create-vhost <dominio> <caminho_absoluto_da_raiz>"
+    echo "Exemplo: create-vhost meusite.localhost /var/www/meusite/web"
+    echo ""
+    echo "Gerenciamento:"
+    echo "  disable-vhost <dominio>  - Desabilita o vhost sem apagar o arquivo"
+    echo "  enable-vhost <dominio>   - Reabilita um vhost desabilitado"
+    return 1
+  fi
+
+  local domain=$1
+  local root_dir=$2
+  local vhost_file="/etc/nginx/sites-available/$domain"
+
+  if [ ! -d "$root_dir" ]; then
+    echo "Erro: O diretório $root_dir não existe."
+    return 1
+  fi
+
+  echo "Criando vhost do Nginx para $domain..."
+  cat > "$vhost_file" <<VHOSTEOF
+server {
+    listen 80;
+    listen [::]:80;
+    server_name $domain;
+    root $root_dir;
+
+    index index.php index.html;
+
+    location / {
+        try_files \$uri /index.php?\$query_string;
+    }
+
+    location @rewrite {
+        rewrite ^/(.*)\$ /index.php?q=\$1;
+    }
+
+    location ~ '\.php\$|^/update.php' {
+        fastcgi_split_path_info ^(.+?\.php)(|/.*)\$;
+        include fastcgi_params;
+        include snippets/fastcgi-php.conf;
+        fastcgi_param HTTP_PROXY "";
+        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+        fastcgi_param PATH_INFO \$fastcgi_path_info;
+        fastcgi_param QUERY_STRING \$query_string;
+        fastcgi_intercept_errors on;
+        fastcgi_pass unix:/run/php/php8.4-fpm.sock;
+    }
+
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)\$ {
+        try_files \$uri @rewrite;
+        expires max;
+        log_not_found off;
+    }
+
+    location ~ ^/sites/.*/files/styles/ {
+        try_files \$uri @rewrite;
+    }
+
+    location ~ ^(/[a-z\-]+)?/system/files/ {
+        try_files \$uri /index.php?\$query_string;
+    }
+
+    location ~* \.(engine|inc|info|install|make|module|profile|test|po|sh|.*sql|theme|twig|tpl(\.php)?|xtmpl)([a-z\-]+)?\$ {
+        deny all;
+    }
+}
+VHOSTEOF
+
+  ln -s "$vhost_file" "/etc/nginx/sites-enabled/" 2>/dev/null || true
+  sudo systemctl restart nginx
+  echo "Vhost criado e habilitado: http://$domain"
+}
+
+# Desabilita um vhost (remove o link simbólico sem apagar o arquivo)
+#
+# Uso: disable-vhost <dominio>
+#
+disable-vhost() {
+  if [ -z "$1" ]; then
+    echo "Uso: disable-vhost <dominio>"
+    return 1
+  fi
+
+  local domain=$1
+  local enabled_link="/etc/nginx/sites-enabled/$domain"
+
+  if [ ! -L "$enabled_link" ]; then
+    echo "O vhost '$domain' não está habilitado ou não existe."
+    return 1
+  fi
+
+  rm "$enabled_link"
+  sudo systemctl restart nginx
+  echo "Vhost '$domain' desabilitado com sucesso."
+}
+
+# Habilita um vhost existente
+#
+# Uso: enable-vhost <dominio>
+#
+enable-vhost() {
+  if [ -z "$1" ]; then
+    echo "Uso: enable-vhost <dominio>"
+    return 1
+  fi
+
+  local domain=$1
+  local vhost_file="/etc/nginx/sites-available/$domain"
+  local enabled_link="/etc/nginx/sites-enabled/$domain"
+
+  if [ ! -f "$vhost_file" ]; then
+    echo "Erro: O arquivo de vhost '/etc/nginx/sites-available/$domain' não existe."
+    echo "Use 'create-vhost' para criar um novo vhost."
+    return 1
+  fi
+
+  if [ -L "$enabled_link" ]; then
+    echo "O vhost '$domain' já está habilitado."
+    return 0
+  fi
+
+  ln -s "$vhost_file" "$enabled_link"
+  sudo systemctl restart nginx
+  echo "Vhost '$domain' habilitado com sucesso."
+}
+
+# ─────────────────────────────────────────────
+# MariaDB — Banco de dados
+# ─────────────────────────────────────────────
+
+# Cria um banco de dados e usuário no MariaDB
+#
+# Uso: create-db <nome>
+# Cria banco + usuário com o mesmo nome e senha aleatória.
+#
+create-db() {
+  if [ -z "$1" ]; then
+    echo "Uso: create-db <nome>"
+    echo "Cria um banco de dados e um usuário com o mesmo nome e senha aleatória."
+    return 1
+  fi
+
+  local name=$1
+  local password=$(openssl rand -base64 16 | tr -dc 'a-zA-Z0-9' | head -c 16)
+
+  echo "Criando banco de dados: $name"
+  sudo mysql -e "CREATE DATABASE IF NOT EXISTS \`$name\`;"
+
+  echo "Criando usuário: $name"
+  sudo mysql -e "CREATE USER IF NOT EXISTS '$name'@'localhost' IDENTIFIED BY '$password';"
+
+  echo "Concedendo privilégios..."
+  sudo mysql -e "GRANT ALL PRIVILEGES ON \`$name\`.* TO '$name'@'localhost';"
+  sudo mysql -e "FLUSH PRIVILEGES;"
+
   echo ""
-} > ~/.zshrc
+  echo "╔══════════════════════════════════════╗"
+  echo "║  Banco de dados criado com sucesso!  ║"
+  echo "╚══════════════════════════════════════╝"
+  echo "  Database: $name"
+  echo "  Usuário:  $name"
+  echo "  Senha:    $password"
+  echo "  Host:     localhost"
+  echo ""
+  echo "⚠ Guarde essa senha, ela não será exibida novamente!"
+}
+
+# Exclui um banco de dados e usuário
+#
+# Uso: delete-db <nome>
+#
+delete-db() {
+  if [ -z "$1" ]; then
+    echo "Uso: delete-db <nome>"
+    return 1
+  fi
+
+  local name=$1
+  read -p "Tem certeza que deseja excluir o banco e o usuário '$name'? [s/N] " confirm
+
+  if [[ $confirm == [sS] || $confirm == [sS][iI][mM] ]]; then
+    echo "Excluindo usuário: $name..."
+    sudo mysql -e "DROP USER IF EXISTS '$name'@'localhost';"
+
+    echo "Excluindo banco de dados: $name..."
+    sudo mysql -e "DROP DATABASE IF EXISTS \`$name\`;"
+
+    echo "Banco de dados e usuário '$name' removidos com sucesso!"
+  else
+    echo "Operação cancelada."
+  fi
+}
+
+# ─────────────────────────────────────────────
+# Drupal — Inicialização e ajuste
+# ─────────────────────────────────────────────
+
+# Inicializa um projeto Drupal (executar na raiz do projeto)
+#
+# Uso: init-drupal
+#
+# O que faz:
+#   - Copia default.settings.php para settings.php
+#   - Dá permissões de escrita
+#   - Cria diretórios files/ e private_files/
+#   - Corrige permissões
+#
+init-drupal() {
+  local settings_dir="web/sites/default"
+  local default_file="$settings_dir/default.settings.php"
+  local settings_file="$settings_dir/settings.php"
+
+  if [ ! -d "$settings_dir" ]; then
+    echo "Erro: Diretório '$settings_dir' não encontrado. Você está na raiz do projeto Drupal?"
+    return 1
+  fi
+
+  if [ ! -f "$default_file" ]; then
+    echo "Erro: '$default_file' não encontrado."
+    return 1
+  fi
+
+  echo "Copiando default.settings.php para settings.php..."
+  cp "$default_file" "$settings_file"
+
+  echo "Dando permissão de escrita ao settings.php..."
+  chmod 666 "$settings_file"
+  chmod 775 "$settings_dir"
+
+  echo "Criando diretórios 'files' e 'private_files'..."
+  mkdir -p "$settings_dir/files"
+  mkdir -p "$settings_dir/private_files"
+
+  echo "Corrigindo permissões dos diretórios..."
+  fix-perms "$settings_dir/files"
+  fix-perms "$settings_dir/private_files"
+
+  echo "init-drupal concluído! Instale o Drupal pelo navegador."
+  echo "Após a instalação, rode: adjust-drupal"
+}
+
+# Ajusta o Drupal após a instalação
+# Detecta automaticamente os domínios pelos vhosts do Nginx
+#
+# Uso: adjust-drupal (na raiz do projeto)
+#
+# O que faz:
+#   - Remove o diretório config* criado dentro de files/
+#   - Remove permissão de escrita do settings.php
+#   - Remove linhas existentes de config_sync, private_path e trusted_host
+#   - Adiciona o caminho correto do config_sync_directory
+#   - Adiciona o caminho do private_files
+#   - Adiciona o trusted_host_patterns com os domínios detectados
+#
+adjust-drupal() {
+  local settings_dir="web/sites/default"
+  local settings_file="$settings_dir/settings.php"
+  local project_web=$(pwd)/web
+
+  if [ ! -d "$settings_dir" ]; then
+    echo "Erro: Diretório '$settings_dir' não encontrado. Você está na raiz do projeto Drupal?"
+    return 1
+  fi
+
+  if [ ! -f "$settings_file" ]; then
+    echo "Aviso: '$settings_file' não encontrado. Rode 'init-drupal' primeiro."
+    return 1
+  fi
+
+  # Detectar domínios automaticamente pelos vhosts do Nginx
+  local domains=()
+  for vhost in /etc/nginx/sites-available/*; do
+    if grep -q "$project_web" "$vhost" 2>/dev/null; then
+      domains+=($(basename "$vhost"))
+    fi
+  done
+
+  if [ ${#domains[@]} -eq 0 ]; then
+    echo "Erro: Nenhum vhost encontrado apontando para $project_web"
+    echo "Crie um vhost primeiro com: create-vhost <dominio> $project_web"
+    return 1
+  fi
+
+  echo "Domínios detectados: ${domains[*]}"
+
+  # Remover diretório config* que o Drupal cria dentro de files/
+  echo "Removendo diretório config* de dentro de files/..."
+  rm -rf "$settings_dir"/files/config_*
+
+  # Dar permissão temporária de escrita para editar o settings.php
+  chmod 666 "$settings_file"
+
+  # Remover linhas existentes
+  echo "Removendo definições existentes..."
+  sed -i '/config_sync_directory/d' "$settings_file"
+  sed -i '/trusted_host_patterns/d' "$settings_file"
+  sed -i '/file_private_path/d' "$settings_file"
+
+  # Adicionar novas configurações no final do arquivo
+  echo "Adicionando configurações no settings.php..."
+  {
+    echo ""
+    echo "// Configurações adicionadas por adjust-drupal"
+    echo "\$settings['config_sync_directory'] = '../config/sync';"
+    echo "\$settings['file_private_path'] = \$app_root . '/sites/default/private_files';"
+    echo "\$settings['trusted_host_patterns'] = ["
+    for d in "${domains[@]}"; do
+      local d_escaped=${d//./\\.}
+      echo "  '^${d_escaped}$',"
+    done
+    echo "];"
+  } >> "$settings_file"
+
+  # Remover permissão de escrita do settings.php
+  echo "Removendo permissão de escrita do settings.php..."
+  chmod 444 "$settings_file"
+
+  # Corrigir permissões apenas de files/ e private_files/
+  echo "Corrigindo permissões de files/ e private_files/..."
+  fix-perms "$settings_dir/files"
+  fix-perms "$settings_dir/private_files"
+
+  echo "adjust-drupal concluído!"
+  echo "  ✓ config* removido de files/"
+  echo "  ✓ config_sync_directory → ../config/sync"
+  echo "  ✓ file_private_path configurado"
+  echo "  ✓ trusted_host_patterns → ${domains[*]}"
+  echo "  ✓ Permissões corrigidas em files/ e private_files/"
+  echo "  ✓ settings.php travado (somente leitura)"
+}
+
+# ─────────────────────────────────────────────
+# Aliases
+# ─────────────────────────────────────────────
+
+alias sites="cd /var/www/"
+alias vhosts="cd /etc/nginx/sites-available/"
+alias update="sudo nala update && sudo nala list --upgradable && sudo nala upgrade -y"
+alias rnx="sudo service nginx restart"
+alias rmdb="sudo service mariadb restart"
+alias logs="tail -f /var/log/nginx/error.log"
+alias phplog="tail -f /var/log/php8.4-fpm.log"
+alias fp="fix-perms"
+alias ss1="npx sass scss/style.scss css/style.css -w --no-source-map"
+alias ss2="npx sass scss/ck5style.scss css/ck5style.css -w --no-source-map"
+
+ZSHEOF
 
 echo -e "\n${GREEN}Instalando Starship...${NC}"
 curl -sS https://starship.rs/install.sh | sh -s -- -y
