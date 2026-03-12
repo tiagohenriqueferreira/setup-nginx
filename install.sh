@@ -79,13 +79,11 @@ php -r "if (hash_file('sha384', 'composer-setup.php') === file_get_contents('htt
 sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 php -r "unlink('composer-setup.php');"
 
-# Instalação do FastFetch
+# Instalação do FastFetch via PPA
 echo -e "\n${GREEN}Instalando FastFetch...${NC}"
-if [ -d "/tmp/fastfetch" ]; then rm -rf /tmp/fastfetch; fi
-git clone -q https://github.com/fastfetch-cli/fastfetch.git /tmp/fastfetch
-cmake -S /tmp/fastfetch -B /tmp/fastfetch/build -DCMAKE_BUILD_TYPE=Release >/dev/null
-cmake --build /tmp/fastfetch/build --parallel >/dev/null
-sudo cp /tmp/fastfetch/build/fastfetch /usr/local/bin/fastfetch
+sudo add-apt-repository ppa:zhangsongcui3371/fastfetch -y
+sudo nala update
+sudo nala install -y fastfetch
 
 # Permissões dos diretórios para o usuário atual
 echo -e "\n${GREEN}Configurando permissões dos diretórios...${NC}"
