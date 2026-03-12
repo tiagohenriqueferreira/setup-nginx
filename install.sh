@@ -580,14 +580,15 @@ adjust-drupal() {
   echo "Removendo diretório config* de dentro de files/..."
   rm -rf "$settings_dir"/files/config_*
 
+  # Desbloquear diretório sites/default para permitir edição
+  chmod 775 "$settings_dir"
+
   # Dar permissão temporária de escrita para editar o settings.php
   chmod 666 "$settings_file"
 
-  # Remover linhas existentes
-  echo "Removendo definições existentes..."
-  sed -i '/config_sync_directory/d' "$settings_file"
-  sed -i '/trusted_host_patterns/d' "$settings_file"
-  sed -i '/file_private_path/d' "$settings_file"
+  # Remover bloco de configurações anteriores do adjust-drupal (se existir)
+  echo "Removendo configurações anteriores..."
+  sed -i '/\/\/ Configurações adicionadas por adjust-drupal/,$d' "$settings_file"
 
   # Adicionar novas configurações no final do arquivo
   echo "Adicionando configurações no settings.php..."
@@ -605,7 +606,7 @@ adjust-drupal() {
   } >> "$settings_file"
 
   # Remover permissão de escrita do settings.php
-  echo "Removendo permissão de escrita do settings.php..."
+  echo "Travando settings.php e diretório $settings_dir..."
   chmod 444 "$settings_file"
 
   # Corrigir permissões apenas de files/ e private_files/
@@ -614,8 +615,7 @@ adjust-drupal() {
   fix-perms "$settings_dir/private_files"
 
   # Travar o diretório sites/default (exigência do Drupal)
-  echo "Travando diretório $settings_dir..."
-  chmod 555 "$settings_dir"
+  sudo chmod 555 "$settings_dir"
 
   echo "adjust-drupal concluído!"
   echo "  ✓ config* removido de files/"
