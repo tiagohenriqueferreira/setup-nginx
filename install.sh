@@ -3,7 +3,7 @@
 # Interrompe o script em caso de erro
 set -e
 
-echo -e "\n🚀 Ambiente de Desenvolvimento Drupal para Ubuntu + PHP + Nginx + MariaDB\n"
+echo -e "\n🚀 Ambiente de Desenvolvimento Drupal (Ubuntu + PHP + Nginx + MariaDB)\n"
 
 # Definição de cores
 GREEN='\033[0;32m'
