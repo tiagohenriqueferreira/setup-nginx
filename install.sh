@@ -613,6 +613,10 @@ adjust-drupal() {
   fix-perms "$settings_dir/files"
   fix-perms "$settings_dir/private_files"
 
+  # Travar o diretório sites/default (exigência do Drupal)
+  echo "Travando diretório $settings_dir..."
+  chmod 555 "$settings_dir"
+
   echo "adjust-drupal concluído!"
   echo "  ✓ config* removido de files/"
   echo "  ✓ config_sync_directory → ../config/sync"
@@ -620,6 +624,7 @@ adjust-drupal() {
   echo "  ✓ trusted_host_patterns → ${domains[*]}"
   echo "  ✓ Permissões corrigidas em files/ e private_files/"
   echo "  ✓ settings.php travado (somente leitura)"
+  echo "  ✓ $settings_dir travado (somente leitura)"
 }
 
 # ─────────────────────────────────────────────
