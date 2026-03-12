@@ -536,7 +536,7 @@ echo -e "\n${GREEN}Configurando Zsh...${NC}"
   echo '    echo "\$settings['"'"'trusted_host_patterns'"'"'] = ["'
   echo "    for d in \"\${domains[@]}\"; do"
   echo '      local d_escaped=${d//./\\.}'
-  echo '      echo "  '"'"'^\$d_escaped\$'"'"',"'
+  echo '      echo "  '"'"'^${d_escaped}$'"'"',"'
   echo "    done"
   echo "    echo \"];\""
   echo "  } >> \"\$settings_file\""
