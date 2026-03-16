@@ -47,6 +47,7 @@ PACKAGES=(
   php8.4-opcache
   php8.4-intl
   php8.4-imagick
+  imagemagick
   libavif-bin
   libmagickcore-6.q16-6-extra
   build-essential
@@ -85,6 +86,11 @@ sudo add-apt-repository ppa:zhangsongcui3371/fastfetch -y
 sudo nala update
 sudo nala install -y fastfetch
 
+# Configurar limites de upload no Nginx
+echo -e "\n${GREEN}Configurando limites de cliente no Nginx...${NC}"
+sudo sed -i '/client_max_body_size/d' /etc/nginx/nginx.conf
+sudo sed -i '/http {/a \    client_max_body_size 2048M;' /etc/nginx/nginx.conf
+
 # Permissões dos diretórios para o usuário atual
 echo -e "\n${GREEN}Configurando permissões dos diretórios...${NC}"
 CURRENT_USER=$(whoami)
@@ -97,10 +103,10 @@ sudo chown -R "$CURRENT_USER":www-data /etc/nginx/sites-enabled
 echo -e "\n${GREEN}Ajustando configurações do PHP...${NC}"
 PHP_INI="/etc/php/8.4/fpm/php.ini"
 sudo sed -i 's/memory_limit = .*/memory_limit = 2048M/' "$PHP_INI"
-sudo sed -i 's/upload_max_filesize = .*/upload_max_filesize = 512M/' "$PHP_INI"
+sudo sed -i 's/upload_max_filesize = .*/upload_max_filesize = 2048M/' "$PHP_INI"
 sudo sed -i 's/post_max_size = .*/post_max_size = 2048M/' "$PHP_INI"
-sudo sed -i 's/max_execution_time = .*/max_execution_time = 180/' "$PHP_INI"
-sudo sed -i 's/max_input_time = .*/max_input_time = 180/' "$PHP_INI"
+sudo sed -i 's/max_execution_time = .*/max_execution_time = 300/' "$PHP_INI"
+sudo sed -i 's/max_input_time = .*/max_input_time = 300/' "$PHP_INI"
 
 # Configurar APCu
 echo -e "\n${GREEN}Configurando APCu...${NC}"
