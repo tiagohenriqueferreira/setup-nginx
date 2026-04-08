@@ -1,5 +1,3 @@
-Aqui está o script completo com todas as correções integradas (Pacotes, PHP.ini e Drupal `$base_url` no `adjust-drupal`), pronto para você copiar e substituir o seu `install.sh`:
-
 ```bash
 #!/bin/bash
 
