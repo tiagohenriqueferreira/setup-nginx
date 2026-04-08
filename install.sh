@@ -1,3 +1,6 @@
+Aqui está o script completo com todas as correções integradas (Pacotes, PHP.ini e Drupal `$base_url` no `adjust-drupal`), pronto para você copiar e substituir o seu `install.sh`:
+
+```bash
 #!/bin/bash
 
 # Interrompe o script em caso de erro
@@ -34,6 +37,7 @@ PACKAGES=(
   php8.4-mysql
   mariadb-server
   php8.4-apcu
+  php8.4-ssh2
   php8.4-uploadprogress
   ffmpeg
   php8.4-ldap
@@ -107,6 +111,8 @@ sudo sed -i 's/upload_max_filesize = .*/upload_max_filesize = 2048M/' "$PHP_INI"
 sudo sed -i 's/post_max_size = .*/post_max_size = 2048M/' "$PHP_INI"
 sudo sed -i 's/max_execution_time = .*/max_execution_time = 300/' "$PHP_INI"
 sudo sed -i 's/max_input_time = .*/max_input_time = 300/' "$PHP_INI"
+sudo sed -i 's/;curl.cainfo =/curl.cainfo = "\/etc\/ssl\/certs\/ca-certificates.crt"/' "$PHP_INI"
+sudo sed -i 's/;openssl.cafile=/openssl.cafile = "\/etc\/ssl\/certs\/ca-certificates.crt"/' "$PHP_INI"
 
 # Configurar APCu
 echo -e "\n${GREEN}Configurando APCu...${NC}"
@@ -200,6 +206,7 @@ fi
 # Configurar Zsh
 echo -e "\n${GREEN}Configurando Zsh...${NC}"
 cat << 'ZSHEOF' > ~/.zshrc
+
 # Configuração do Oh My Zsh
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="af-magic"
@@ -224,10 +231,6 @@ export NVM_DIR="$HOME/.nvm"
 # Prompt Starship
 eval "$(starship init zsh)"
 
-# ─────────────────────────────────────────────
-# Funções utilitárias
-# ─────────────────────────────────────────────
-
 # Função que executa o Drush independente do diretório atual
 drush() {
   local current_dir=$(pwd)
@@ -249,19 +252,6 @@ drush() {
   fi
 }
 
-# ─────────────────────────────────────────────
-# Permissões
-# ─────────────────────────────────────────────
-
-# Corrige permissões de um diretório do Drupal
-#
-# Uso: fix-perms [diretório]
-# Padrão: web/sites/default/files
-#
-# Permissões aplicadas:
-#   Diretórios → 2775 (SGID + rwx dono/grupo, rx outros)
-#   Arquivos   → 664  (rw dono/grupo, r outros)
-#
 fix-perms() {
   local current_user=$(whoami)
   local target_dir="${1:-"web/sites/default/files"}"
@@ -282,19 +272,6 @@ fix-perms() {
   echo "Permissões corrigidas com sucesso!"
 }
 
-# ─────────────────────────────────────────────
-# Nginx — Vhosts
-# ─────────────────────────────────────────────
-
-# Cria um server block do Nginx otimizado para Drupal
-#
-# Uso: create-vhost <dominio> <caminho_absoluto>
-# Exemplo: create-vhost meusite.localhost /var/www/meusite/web
-#
-# Após criar, o vhost é automaticamente habilitado.
-# Para desabilitar: disable-vhost <dominio>
-# Para reabilitar:  enable-vhost <dominio>
-#
 create-vhost() {
   if [ -z "$1" ] || [ -z "$2" ]; then
     echo "Uso: create-vhost <dominio> <caminho_absoluto_da_raiz>"
@@ -370,10 +347,6 @@ VHOSTEOF
   echo "Vhost criado e habilitado: http://$domain"
 }
 
-# Desabilita um vhost (remove o link simbólico sem apagar o arquivo)
-#
-# Uso: disable-vhost <dominio>
-#
 disable-vhost() {
   if [ -z "$1" ]; then
     echo "Uso: disable-vhost <dominio>"
@@ -393,10 +366,6 @@ disable-vhost() {
   echo "Vhost '$domain' desabilitado com sucesso."
 }
 
-# Habilita um vhost existente
-#
-# Uso: enable-vhost <dominio>
-#
 enable-vhost() {
   if [ -z "$1" ]; then
     echo "Uso: enable-vhost <dominio>"
@@ -423,15 +392,6 @@ enable-vhost() {
   echo "Vhost '$domain' habilitado com sucesso."
 }
 
-# ─────────────────────────────────────────────
-# MariaDB — Banco de dados
-# ─────────────────────────────────────────────
-
-# Cria um banco de dados e usuário no MariaDB
-#
-# Uso: create-db <nome>
-# Cria banco + usuário com o mesmo nome e senha aleatória.
-#
 create-db() {
   if [ -z "$1" ]; then
     echo "Uso: create-db <nome>"
@@ -464,10 +424,6 @@ create-db() {
   echo "⚠ Guarde essa senha, ela não será exibida novamente!"
 }
 
-# Exclui um banco de dados e usuário
-#
-# Uso: delete-db <nome>
-#
 delete-db() {
   if [ -z "$1" ]; then
     echo "Uso: delete-db <nome>"
@@ -490,20 +446,6 @@ delete-db() {
   fi
 }
 
-# ─────────────────────────────────────────────
-# Drupal — Inicialização e ajuste
-# ─────────────────────────────────────────────
-
-# Inicializa um projeto Drupal (executar na raiz do projeto)
-#
-# Uso: init-drupal
-#
-# O que faz:
-#   - Copia default.settings.php para settings.php
-#   - Dá permissões de escrita
-#   - Cria diretórios files/ e private_files/
-#   - Corrige permissões
-#
 init-drupal() {
   local settings_dir="web/sites/default"
   local default_file="$settings_dir/default.settings.php"
@@ -538,19 +480,6 @@ init-drupal() {
   echo "Após a instalação, rode: adjust-drupal"
 }
 
-# Ajusta o Drupal após a instalação
-# Detecta automaticamente os domínios pelos vhosts do Nginx
-#
-# Uso: adjust-drupal (na raiz do projeto)
-#
-# O que faz:
-#   - Remove o diretório config* criado dentro de files/
-#   - Remove permissão de escrita do settings.php
-#   - Remove linhas existentes de config_sync, private_path e trusted_host
-#   - Adiciona o caminho correto do config_sync_directory
-#   - Adiciona o caminho do private_files
-#   - Adiciona o trusted_host_patterns com os domínios detectados
-#
 adjust-drupal() {
   local settings_dir="web/sites/default"
   local settings_file="$settings_dir/settings.php"
@@ -601,6 +530,10 @@ adjust-drupal() {
   {
     echo ""
     echo "// Configurações adicionadas por adjust-drupal"
+    echo "global \$base_url;"
+    echo "if (PHP_SAPI !== 'cli' && !isset(\$base_url) && isset(\$_SERVER['HTTP_HOST'])) {"
+    echo "  \$base_url = (isset(\$_SERVER['HTTPS']) && \$_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . \$_SERVER['HTTP_HOST'];"
+    echo "}"
     echo "\$settings['config_sync_directory'] = '../config/sync';"
     echo "\$settings['file_private_path'] = \$app_root . '/sites/default/private_files';"
     echo "\$settings['trusted_host_patterns'] = ["
@@ -633,14 +566,6 @@ adjust-drupal() {
   echo "  ✓ $settings_dir travado (somente leitura)"
 }
 
-# ─────────────────────────────────────────────
-# Verificação de serviços
-# ─────────────────────────────────────────────
-
-# Verifica o status dos serviços Nginx, PHP-FPM e MariaDB
-#
-# Uso: check-services
-#
 check-services() {
   local services=(nginx php8.4-fpm mariadb)
   echo "Verificando serviços..."
@@ -653,10 +578,6 @@ check-services() {
   done
 }
 
-# Reinicia Nginx, PHP-FPM e MariaDB
-#
-# Uso: restart-services
-#
 restart-services() {
   echo "Reiniciando serviços..."
   sudo systemctl restart nginx php8.4-fpm mariadb
@@ -664,9 +585,6 @@ restart-services() {
 }
 
 # ─────────────────────────────────────────────
-# Aliases
-# ─────────────────────────────────────────────
-
 alias sites="cd /var/www/"
 alias vhosts="cd /etc/nginx/sites-available/"
 alias update="sudo nala update && sudo nala list --upgradable && sudo nala upgrade -y"
@@ -715,3 +633,4 @@ if [ -n "$ZSH_VERSION" ]; then
 else
    exec zsh
 fi
+```
